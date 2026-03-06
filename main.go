@@ -57,6 +57,13 @@ func run() error {
 		handler.HandleExec,
 	)
 
+	s.AddTool(
+		mcp.NewTool("context",
+			mcp.WithDescription("Returns environment context: mounted projects, OS, available tools, disk space, and log file path. Call this at the start of a session to orient yourself."),
+		),
+		handler.HandleContext,
+	)
+
 	slog.Info("serving on stdio")
 	if err := server.ServeStdio(s); err != nil {
 		return fmt.Errorf("server: %w", err)

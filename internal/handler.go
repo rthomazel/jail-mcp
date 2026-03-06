@@ -21,6 +21,37 @@ func NewHandler(cfg *Config) *Handler {
 	return &Handler{cfg: cfg}
 }
 
+func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	gather := func(cmd string) string {
+		r := runCommand(ctx, h.cfg, cmd, "/")
+		return strings.TrimSpace(r.Stdout)
+	}
+
+	info := map[string]any{
+		"os":       gather("cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"'"),
+		"arch":     gather("uname -m"),
+		"projects": gather("ls -d /projects/*/ 2>/dev/null | sed 's|/$||' || echo none"),
+		"log_file": h.cfg.LogFile,
+		"disk":     gather("df -h / | awk 'NR==2{print $4\" free of \"$2}'"),
+		"tools": map[string]string{
+			"bash":    gather("bash --version | head -1 | cut -d' ' -f4"),
+			"git":     gather("git --version | cut -d' ' -f3"),
+			"go":      gather("go version | cut -d' ' -f3"),
+			"python3": gather("python3 --version | cut -d' ' -f2"),
+			"node":    gather("node --version"),
+			"make":    gather("make --version | head -1 | cut -d' ' -f3"),
+			"jq":      gather("jq --version"),
+		},
+	}
+
+	b, err := json.Marshal(info)
+	if err != nil {
+		return mcp.NewToolResultError("failed to encode context"), nil
+	}
+
+	return mcp.NewToolResultText(string(b)), nil
+}
+
 func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	args := req.Params.Arguments
 
