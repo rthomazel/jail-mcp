@@ -21,7 +21,7 @@ case "$cmd" in
     golangci-lint run ./...
     ;;
   # -- start the server with godotenv
-  server)
+  dev)
     # TODO: add to container dependencies, agents cant see go tools under $HOME/go
     "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go run main.go
     ;;

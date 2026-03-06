@@ -24,8 +24,8 @@ cp docker-compose.yml docker-compose.user.yml
 ```
 
 Update the volume paths to point to your real projects.
-The example configurations shows how to add read-only paths.
 Paths bind-mounted as volumes _can be modified in your machine_ which is what you want for the agent to work for you.
+The example configurations shows how to add read-only paths, for things you don't want to risk, like .git.
 
 **2.1. Configuration**
 
