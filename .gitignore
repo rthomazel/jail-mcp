@@ -1,3 +1,4 @@
+.env
 jail-mcp
 go.sum
 _local/*
