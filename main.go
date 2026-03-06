@@ -70,5 +70,6 @@ func run() error {
 	if err := server.ServeStdio(s); err != nil {
 		return fmt.Errorf("server: %w", err)
 	}
+
 	return nil
 }
