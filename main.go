@@ -11,8 +11,6 @@ import (
 	"github.com/tcodes0/jail-mcp/internal"
 )
 
-var version = "dev"
-
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
@@ -40,13 +38,13 @@ func run() error {
 		}
 	}()
 
-	slog.Info("jail-mcp starting", "version", version, "dirs", cfg.AllowedDirs, "timeout", cfg.Timeout, "log", cfg.LogFile)
+	slog.Info("jail-mcp starting", "dirs", cfg.AllowedDirs, "timeout", cfg.Timeout, "log", cfg.LogFile)
 
 	handler := internal.NewHandler(cfg)
 
 	s := server.NewMCPServer(
 		"jail-mcp",
-		version,
+		"local",
 		server.WithToolCapabilities(false),
 	)
 
