@@ -12,25 +12,31 @@ err() {
   echo "error: line $1" >&2
 }
 
+# AGENTS: run commands directly, you cant execute this file
 cmd="${1:-help}"
 
-    # AGENTS: run commands directly, you cant execute this file
 case "$cmd" in
+  # -- run golangci-lint
   lint)
     golangci-lint run ./...
     ;;
+  # -- start the server with godotenv
   server)
     # TODO: add to container dependencies, agents cant see go tools under $HOME/go
     "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go run main.go
     ;;
+  # -- build local binary to bin/server
   build)
     go build -o bin/server main.go
+    ;;
+  # -- build docker image tagged jail-mcp with current commit as version
+  docker-build)
+    docker build --build-arg VERSION="$(git rev-parse --short HEAD)" -t jail-mcp .
     ;;
   help|*)
     echo "Usage: ./run <command>"
     echo ""
     echo "Commands:"
-    echo "  lint   golangci-lint run ./..."
-    echo "  server    godotenv -f .env go run main.go"
+    awk '/^  # -- /{desc=substr($0, index($0,"-- ")+3)} /\)$/ && desc{cmd=$0; gsub(/[[:space:]()|*]/, "", cmd); printf "  %-20s %s\n", cmd, desc; desc=""}' "$0"
     ;;
 esac
