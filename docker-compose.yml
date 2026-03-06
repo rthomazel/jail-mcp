@@ -1,0 +1,14 @@
+services:
+  jail-mcp:
+    build: .
+    stdin_open: true
+    tty: false
+    environment:
+      JAIL_MCP_DIRS: /workspace:/data
+      JAIL_MCP_TIMEOUT: 60s
+      JAIL_MCP_LOG: /var/log/jail-mcp/jail.log
+    volumes:
+      - /Users/you/myproject:/workspace
+      - /Users/you/myproject/.git:/workspace/.git:ro
+      # - /Users/you/somedata:/data
+      - /Users/you/.jail-mcp-logs:/var/log/jail-mcp

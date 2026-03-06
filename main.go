@@ -1,0 +1,64 @@
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/mark3labs/mcp-go/server"
+)
+
+var version = "dev"
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	cfg, err := loadConfig()
+	if err != nil {
+		return fmt.Errorf("config: %w", err)
+	}
+
+	log, err := newLogger(cfg.LogFile)
+	if err != nil {
+		return fmt.Errorf("logger: %w", err)
+	}
+	defer log.Close()
+
+	log.Info("jail-mcp starting", "version", version, "dirs", cfg.AllowedDirs, "timeout", cfg.Timeout)
+
+	executor := newExecutor(cfg, log)
+	handler := newHandler(executor, cfg, log)
+
+	s := server.NewMCPServer(
+		"jail-mcp",
+		version,
+		server.WithToolCapabilities(false),
+	)
+
+	s.AddTool(
+		mcp.NewTool("shell_exec",
+			mcp.WithDescription("Execute any shell command inside the container. Returns stdout, stderr, exit code, and duration."),
+			mcp.WithString("command", mcp.Required(), mcp.Description("Shell command to execute")),
+			mcp.WithString("cwd", mcp.Description("Working directory. Must be one of the allowed dirs or a subpath. Defaults to first allowed dir.")),
+		),
+		handler.handleExec,
+	)
+
+	s.AddTool(
+		mcp.NewTool("list_dirs",
+			mcp.WithDescription("List the directories available inside this container."),
+		),
+		handler.handleListDirs,
+	)
+
+	log.Info("serving on stdio")
+	if err := server.ServeStdio(s); err != nil {
+		return fmt.Errorf("server: %w", err)
+	}
+	return nil
+}
