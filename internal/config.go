@@ -13,6 +13,11 @@ type Config struct {
 	LogFile     string
 }
 
+var defaults = Config{
+	Timeout: 30 * time.Second,
+	LogFile: "/var/log/jail-mcp/jail.log",
+}
+
 func LoadConfig() (*Config, error) {
 	dirsRaw := os.Getenv("JAIL_MCP_DIRS")
 	if dirsRaw == "" {
@@ -30,23 +35,23 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("JAIL_MCP_DIRS contained no valid directories")
 	}
 
-	timeout := 30 * time.Second
+	cfg := &Config{
+		AllowedDirs: allowed,
+		Timeout:     defaults.Timeout,
+		LogFile:     defaults.LogFile,
+	}
+
 	if raw := os.Getenv("JAIL_MCP_TIMEOUT"); raw != "" {
 		d, err := time.ParseDuration(raw)
 		if err != nil {
 			return nil, fmt.Errorf("JAIL_MCP_TIMEOUT invalid: %w", err)
 		}
-		timeout = d
+		cfg.Timeout = d
 	}
 
-	logFile := os.Getenv("JAIL_MCP_LOG")
-	if logFile == "" {
-		logFile = "/var/log/jail-mcp/jail.log"
+	if logFile := os.Getenv("JAIL_MCP_LOG"); logFile != "" {
+		cfg.LogFile = logFile
 	}
 
-	return &Config{
-		AllowedDirs: allowed,
-		Timeout:     timeout,
-		LogFile:     logFile,
-	}, nil
+	return cfg, nil
 }

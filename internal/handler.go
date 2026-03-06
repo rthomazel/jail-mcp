@@ -63,9 +63,9 @@ func (h *Handler) HandleListDirs(_ context.Context, _ mcp.CallToolRequest) (*mcp
 	return mcp.NewToolResultText(strings.Join(h.cfg.AllowedDirs, "\n")), nil
 }
 
-func (h *Handler) isAllowedDir(cwd string) bool {
+func (h *Handler) isAllowedDir(path string) bool {
 	for _, allowed := range h.cfg.AllowedDirs {
-		if cwd == allowed || strings.HasPrefix(cwd, allowed+"/") {
+		if path == allowed || strings.HasPrefix(path, allowed+"/") {
 			return true
 		}
 	}
