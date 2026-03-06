@@ -7,12 +7,7 @@ import (
 	"path/filepath"
 )
 
-type Logger struct {
-	*slog.Logger
-	f io.Closer
-}
-
-func NewLogger(logPath string) (*Logger, error) {
+func NewLogger(logPath string) (io.Closer, error) {
 	if err := os.MkdirAll(filepath.Dir(logPath), 0755); err != nil {
 		return nil, err
 	}
@@ -22,17 +17,10 @@ func NewLogger(logPath string) (*Logger, error) {
 		return nil, err
 	}
 
-	w := io.MultiWriter(f, os.Stderr)
-	handler := slog.NewTextHandler(w, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	})
+	slog.SetDefault(slog.New(slog.NewTextHandler(
+		io.MultiWriter(f, os.Stderr),
+		&slog.HandlerOptions{Level: slog.LevelInfo},
+	)))
 
-	return &Logger{
-		Logger: slog.New(handler),
-		f:      f,
-	}, nil
-}
-
-func (l *Logger) Close() {
-	_ = l.f.Close()
+	return f, nil
 }

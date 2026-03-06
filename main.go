@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"runtime/debug"
 
@@ -25,24 +26,23 @@ func run() error {
 		return fmt.Errorf("config: %w", err)
 	}
 
-	log, err := internal.NewLogger(cfg.LogFile)
+	logFile, err := internal.NewLogger(cfg.LogFile)
 	if err != nil {
 		return fmt.Errorf("logger: %w", err)
 	}
-	defer log.Close()
+	defer func() { _ = logFile.Close() }()
 
 	defer func() {
 		if msg := recover(); msg != nil {
-			log.Error("panic", "msg", msg, "stack", string(debug.Stack()))
-			log.Close()
+			slog.Error("panic", "msg", msg, "stack", string(debug.Stack()))
+			_ = logFile.Close()
 			os.Exit(1)
 		}
 	}()
 
-	log.Info("jail-mcp starting", "version", version, "dirs", cfg.AllowedDirs, "timeout", cfg.Timeout, "log", cfg.LogFile)
+	slog.Info("jail-mcp starting", "version", version, "dirs", cfg.AllowedDirs, "timeout", cfg.Timeout, "log", cfg.LogFile)
 
-	executor := internal.NewExecutor(cfg, log)
-	handler := internal.NewHandler(executor, cfg, log)
+	handler := internal.NewHandler(cfg)
 
 	s := server.NewMCPServer(
 		"jail-mcp",
@@ -66,7 +66,7 @@ func run() error {
 		handler.HandleListDirs,
 	)
 
-	log.Info("serving on stdio")
+	slog.Info("serving on stdio")
 	if err := server.ServeStdio(s); err != nil {
 		return fmt.Errorf("server: %w", err)
 	}

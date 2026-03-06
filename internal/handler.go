@@ -4,19 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
 type Handler struct {
-	executor *Executor
-	cfg      *Config
-	log      *Logger
-}
-
-func NewHandler(executor *Executor, cfg *Config, log *Logger) *Handler {
-	return &Handler{executor: executor, cfg: cfg, log: log}
+	cfg *Config
 }
 
 func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -33,13 +28,14 @@ func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp
 	}
 
 	if !h.isAllowedDir(cwd) {
+		slog.Warn("cwd not allowed", "cwd", cwd, "allowed", h.cfg.AllowedDirs)
 		return mcp.NewToolResultError(fmt.Sprintf(
 			"cwd %q is not under an allowed directory. Allowed: %v",
 			cwd, h.cfg.AllowedDirs,
 		)), nil
 	}
 
-	result := h.executor.Run(ctx, command, cwd)
+	result := RunCommand(ctx, h.cfg, command, cwd)
 
 	if result.Error != "" {
 		return mcp.NewToolResultError(result.Error), nil
@@ -49,7 +45,7 @@ func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp
 		"stdout":    result.Stdout,
 		"stderr":    result.Stderr,
 		"exit_code": result.ExitCode,
-		"duration":  result.Duration.Round(1_000_000).String(), // round to ms
+		"duration":  result.Duration.Round(1_000_000).String(),
 	}
 
 	b, err := json.Marshal(resp)
@@ -71,4 +67,8 @@ func (h *Handler) isAllowedDir(cwd string) bool {
 		}
 	}
 	return false
+}
+
+func NewHandler(cfg *Config) *Handler {
+	return &Handler{cfg: cfg}
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"os/exec"
 	"strings"
 	"time"
@@ -17,20 +18,11 @@ type Result struct {
 	Error    string
 }
 
-type Executor struct {
-	cfg *Config
-	log *Logger
-}
-
-func NewExecutor(cfg *Config, log *Logger) *Executor {
-	return &Executor{cfg: cfg, log: log}
-}
-
-func (e *Executor) Run(ctx context.Context, command, cwd string) *Result {
+func RunCommand(ctx context.Context, cfg *Config, command, cwd string) *Result {
 	start := time.Now()
-	e.log.Info("exec start", "cmd", command, "cwd", cwd)
+	slog.Info("exec start", "cmd", command, "cwd", cwd)
 
-	ctx, cancel := context.WithTimeout(ctx, e.cfg.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, cfg.Timeout)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "bash", "-c", command)
@@ -48,7 +40,7 @@ func (e *Executor) Run(ctx context.Context, command, cwd string) *Result {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			exitCode = exitErr.ExitCode()
 		} else {
-			e.log.Error("exec failed to start", "cmd", command, "err", err)
+			slog.Error("exec failed to start", "cmd", command, "err", err)
 			return &Result{
 				Duration: duration,
 				ExitCode: -1,
@@ -57,11 +49,7 @@ func (e *Executor) Run(ctx context.Context, command, cwd string) *Result {
 		}
 	}
 
-	e.log.Info("exec done",
-		"cmd", command,
-		"exit_code", exitCode,
-		"duration", duration.Round(time.Millisecond),
-	)
+	slog.Info("exec done", "cmd", command, "exit_code", exitCode, "duration", duration.Round(time.Millisecond))
 
 	return &Result{
 		Stdout:   strings.TrimRight(stdout.String(), "\n"),
