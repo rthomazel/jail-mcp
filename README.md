@@ -11,7 +11,7 @@ The server runs as root in a container that dies at session end.
 
 ```bash
 go mod tidy
-docker compose build
+./run docker-build
 ```
 
 **2. Configure your mounts**
@@ -39,11 +39,11 @@ For Claude desktop, add to `~/Library/Application Support/Claude/claude_desktop_
 {
   "mcpServers": {
     "jail-mcp": {
-      "command": "docker",
+      "command": "/Applications/Docker.app/Contents/Resources/bin/docker",
       "args": [
         "compose",
         "-f",
-        "/Users/you/Desktop/jail-mcp/docker-compose.user.yml",
+        "/Users/you/jail-mcp/docker-compose.user.yml",
         "run",
         "--rm",
         "-i",
@@ -59,3 +59,7 @@ Restart client.
 ## Logs
 
 Logs are written in plain text to `JAIL_MCP_LOG_FILE` and to stderr.
+
+## Dev
+
+Check run script.

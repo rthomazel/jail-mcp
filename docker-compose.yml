@@ -2,6 +2,7 @@
 services:
   jail-mcp:
     build: .
+    image: jail-mcp
     stdin_open: true
     tty: false
     environment:

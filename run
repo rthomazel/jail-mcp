@@ -31,7 +31,7 @@ case "$cmd" in
     ;;
   # -- build docker image tagged jail-mcp with current commit as version
   docker-build)
-    docker build --build-arg VERSION="$(git rev-parse --short HEAD)" -t jail-mcp .
+    docker compose -f docker-compose.user.yml build --build-arg VERSION="$(git rev-parse --short HEAD)"
     ;;
   help|*)
     echo "Usage: ./run <command>"
