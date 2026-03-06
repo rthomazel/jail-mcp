@@ -8,14 +8,21 @@ set -euo pipefail
 shopt -s globstar
 trap 'err $LINENO' ERR
 
+err() {
+  echo "error: line $1" >&2
+}
+
 cmd="${1:-help}"
 
 case "$cmd" in
   lint)
+    # AGENTS: run this command directly, you cant execute this file
     golangci-lint run ./...
     ;;
   server)
-    godotenv -f .env go run main.go
+    # TODO: add to container dependencies, agents cant see go tools under $HOME/go
+    # AGENTS: run this command directly, you cant execute this file
+    "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go run .
     ;;
   help|*)
     echo "Usage: ./run <command>"

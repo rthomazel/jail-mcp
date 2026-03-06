@@ -20,13 +20,18 @@ func newHandler(executor *Executor, cfg *Config, log *Logger) *Handler {
 }
 
 func (h *Handler) handleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	command, err := req.RequireString("command")
-	if err != nil {
+	args := req.Params.Arguments
+
+	command, ok := args["command"].(string)
+	if !ok || command == "" {
 		return mcp.NewToolResultError("missing required parameter: command"), nil
 	}
 
 	// Default cwd to first allowed dir if caller did not specify one.
-	cwd := req.GetString("cwd", h.cfg.AllowedDirs[0])
+	cwd := h.cfg.AllowedDirs[0]
+	if v, ok := args["cwd"].(string); ok && v != "" {
+		cwd = v
+	}
 
 	if !h.isAllowedDir(cwd) {
 		return mcp.NewToolResultError(fmt.Sprintf(

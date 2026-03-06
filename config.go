@@ -21,7 +21,7 @@ func loadConfig() (*Config, error) {
 	}
 
 	var allowed []string
-	for _, d := range strings.Split(dirsRaw, ":") {
+	for d := range strings.SplitSeq(dirsRaw, ":") {
 		if d = strings.TrimSpace(d); d != "" {
 			allowed = append(allowed, d)
 		}

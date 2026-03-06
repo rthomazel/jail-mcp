@@ -41,5 +41,5 @@ func newLogger(logPath string) (*Logger, error) {
 }
 
 func (l *Logger) Close() {
-	l.f.Close()
+	_ = l.f.Close()
 }
