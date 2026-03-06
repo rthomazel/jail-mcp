@@ -17,6 +17,10 @@ type Handler struct {
 	cfg *Config
 }
 
+func NewHandler(cfg *Config) *Handler {
+	return &Handler{cfg: cfg}
+}
+
 func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	args := req.Params.Arguments
 
@@ -25,20 +29,12 @@ func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp
 		return mcp.NewToolResultError("missing required parameter: command"), nil
 	}
 
-	cwd := h.cfg.AllowedDirs[0]
-	if v, ok := args["cwd"].(string); ok && v != "" {
-		cwd = v
+	cwd, _ := args["cwd"].(string)
+	if cwd == "" {
+		cwd = "/"
 	}
 
-	if !h.isAllowedDir(cwd) {
-		slog.Warn("cwd not allowed", "cwd", cwd, "allowed", h.cfg.AllowedDirs)
-		return mcp.NewToolResultError(fmt.Sprintf(
-			"cwd %q is not under an allowed directory. Allowed: %v",
-			cwd, h.cfg.AllowedDirs,
-		)), nil
-	}
-
-	result := RunCommand(ctx, h.cfg, command, cwd)
+	result := runCommand(ctx, h.cfg, command, cwd)
 
 	if result.Error != "" {
 		return mcp.NewToolResultError(result.Error), nil
@@ -59,20 +55,7 @@ func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp
 	return mcp.NewToolResultText(string(b)), nil
 }
 
-func (h *Handler) HandleListDirs(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	return mcp.NewToolResultText(strings.Join(h.cfg.AllowedDirs, "\n")), nil
-}
-
-func (h *Handler) isAllowedDir(path string) bool {
-	for _, allowed := range h.cfg.AllowedDirs {
-		if path == allowed || strings.HasPrefix(path, allowed+"/") {
-			return true
-		}
-	}
-	return false
-}
-
-type Result struct {
+type result struct {
 	Stdout   string
 	Stderr   string
 	ExitCode int
@@ -80,7 +63,7 @@ type Result struct {
 	Error    string
 }
 
-func RunCommand(ctx context.Context, cfg *Config, command, cwd string) *Result {
+func runCommand(ctx context.Context, cfg *Config, command, cwd string) *result {
 	start := time.Now()
 	slog.Info("exec start", "cmd", command, "cwd", cwd)
 
@@ -103,7 +86,7 @@ func RunCommand(ctx context.Context, cfg *Config, command, cwd string) *Result {
 			exitCode = exitErr.ExitCode()
 		} else {
 			slog.Error("exec failed to start", "cmd", command, "err", err)
-			return &Result{
+			return &result{
 				Duration: duration,
 				ExitCode: -1,
 				Error:    fmt.Sprintf("could not start process: %v", err),
@@ -113,14 +96,10 @@ func RunCommand(ctx context.Context, cfg *Config, command, cwd string) *Result {
 
 	slog.Info("exec done", "cmd", command, "exit_code", exitCode, "duration", duration.Round(time.Millisecond))
 
-	return &Result{
+	return &result{
 		Stdout:   strings.TrimRight(stdout.String(), "\n"),
 		Stderr:   strings.TrimRight(stderr.String(), "\n"),
 		ExitCode: exitCode,
 		Duration: duration,
 	}
-}
-
-func NewHandler(cfg *Config) *Handler {
-	return &Handler{cfg: cfg}
 }

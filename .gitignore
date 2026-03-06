@@ -5,3 +5,4 @@ _local/*
 prompt.md
 main
 bin/*
+docker-compose.user.yml

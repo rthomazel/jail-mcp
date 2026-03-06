@@ -2,6 +2,9 @@
 
 MCP server providing shell access to clients, jailed in a container.
 
+> **Running outside Docker is dangerous.**
+The server runs as root in a container that dies at session end.
+
 ## Setup
 
 **1. Build**
@@ -11,65 +14,48 @@ go mod tidy
 docker compose build
 ```
 
-**2. Configure volume mounts**
+**2. Configure your mounts**
 
-Edit `docker-compose.yml` and replace the placeholder paths:
+`docker-compose.yml` is a sample file — do not edit it.
+Copy it to `docker-compose.user.yml` and edit that instead:
 
-```yaml
-volumes:
-  - /Users/you/myproject:/workspace
-  - /Users/you/myproject/.git:/workspace/.git:ro
-  - /Users/you/.jail-mcp-logs:/var/log/jail-mcp
+```bash
+cp docker-compose.yml docker-compose.user.yml
 ```
 
-The `.git` mount is read-only — the AI can read it but cannot modify or delete it.
+Update the volume paths to point to your real projects.
+The example configurations shows how to add read-only paths.
+Paths bind-mounted as volumes _can be modified in your machine_ which is what you want for the agent to work for you.
 
-To expose additional directories add more volume entries and update `JAIL_MCP_DIRS`:
+**2.1. Configuration**
 
-```yaml
-environment:
-  JAIL_MCP_DIRS: /workspace:/data
-volumes:
-  - /Users/you/myproject:/workspace
-  - /Users/you/somedata:/data
-```
+See environment section in docker-compose.yml.
 
-**3. Wire up Claude Desktop**
+**3. Wire up clients**
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+For Claude desktop, add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "jail-mcp": {
       "command": "docker",
-      "args": ["compose", "-f", "/Users/you/Desktop/jail-mcp/docker-compose.yml", "run", "--rm", "-i", "jail-mcp"]
+      "args": [
+        "compose",
+        "-f",
+        "/Users/you/Desktop/jail-mcp/docker-compose.user.yml",
+        "run",
+        "--rm",
+        "-i",
+        "jail-mcp"
+      ]
     }
   }
 }
 ```
 
-Restart Claude Desktop.
-
-## Configuration
-
-| Variable           | Required | Default                      |
-|--------------------|----------|------------------------------|
-| `JAIL_MCP_DIRS`    | yes      | —                            |
-| `JAIL_MCP_TIMEOUT` | no       | `30s`                        |
-| `JAIL_MCP_LOG`     | no       | `/var/log/jail-mcp/jail.log` |
-
-`JAIL_MCP_DIRS` is a colon-separated list of dirs the AI can use as cwd, e.g. `/workspace:/data`.
+Restart client.
 
 ## Logs
 
-Logs are written in plain text to `JAIL_MCP_LOG` and teed to stderr.
-
-```
-time=2026-03-05T14:32:01Z level=INFO msg="exec start" cmd="go build ./..." cwd=/workspace
-time=2026-03-05T14:32:03Z level=INFO msg="exec done" cmd="go build ./..." exit_code=0 duration=1.82s
-```
-
-```bash
-tail -f ~/.jail-mcp-logs/jail.log
-```
+Logs are written in plain text to `JAIL_MCP_LOG_FILE` and to stderr.

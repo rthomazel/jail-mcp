@@ -38,7 +38,7 @@ func run() error {
 		}
 	}()
 
-	slog.Info("jail-mcp starting", "dirs", cfg.AllowedDirs, "timeout", cfg.Timeout, "log", cfg.LogFile)
+	slog.Info("jail-mcp starting", "timeout", cfg.Timeout, "log", cfg.LogFile)
 
 	handler := internal.NewHandler(cfg)
 
@@ -52,16 +52,9 @@ func run() error {
 		mcp.NewTool("shell_exec",
 			mcp.WithDescription("Execute any shell command inside the container. Returns stdout, stderr, exit code, and duration."),
 			mcp.WithString("command", mcp.Required(), mcp.Description("Shell command to execute")),
-			mcp.WithString("cwd", mcp.Description("Working directory. Must be one of the allowed dirs or a subpath. Defaults to first allowed dir.")),
+			mcp.WithString("cwd", mcp.Description("Working directory inside the container. Defaults to /")),
 		),
 		handler.HandleExec,
-	)
-
-	s.AddTool(
-		mcp.NewTool("list_dirs",
-			mcp.WithDescription("List the directories available inside this container."),
-		),
-		handler.HandleListDirs,
 	)
 
 	slog.Info("serving on stdio")
