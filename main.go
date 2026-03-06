@@ -39,7 +39,7 @@ func run() error {
 		}
 	}()
 
-	log.Info("jail-mcp starting", "version", version, "dirs", cfg.AllowedDirs, "timeout", cfg.Timeout)
+	log.Info("jail-mcp starting", "version", version, "dirs", cfg.AllowedDirs, "timeout", cfg.Timeout, "log", cfg.LogFile)
 
 	executor := internal.NewExecutor(cfg, log)
 	handler := internal.NewHandler(executor, cfg, log)
