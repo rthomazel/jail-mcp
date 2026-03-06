@@ -13,7 +13,6 @@ type Config struct {
 	LogFile     string
 }
 
-// LoadConfig reads configuration from environment variables. See README for details.
 func LoadConfig() (*Config, error) {
 	dirsRaw := os.Getenv("JAIL_MCP_DIRS")
 	if dirsRaw == "" {
@@ -26,6 +25,7 @@ func LoadConfig() (*Config, error) {
 			allowed = append(allowed, d)
 		}
 	}
+
 	if len(allowed) == 0 {
 		return nil, fmt.Errorf("JAIL_MCP_DIRS contained no valid directories")
 	}

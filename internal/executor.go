@@ -9,9 +9,6 @@ import (
 	"time"
 )
 
-// Result holds everything that came back from running a command.
-// Error is only set when the process could not be started at all —
-// a non-zero ExitCode is not an error, it just means the command failed.
 type Result struct {
 	Stdout   string
 	Stderr   string
@@ -36,8 +33,6 @@ func (e *Executor) Run(ctx context.Context, command, cwd string) *Result {
 	ctx, cancel := context.WithTimeout(ctx, e.cfg.Timeout)
 	defer cancel()
 
-	// bash -c gives full shell power: pipes, redirects, &&, subshells, etc.
-	// Security comes from Docker isolation, not from us restricting syntax.
 	cmd := exec.CommandContext(ctx, "bash", "-c", command)
 	cmd.Dir = cwd
 
@@ -51,10 +46,8 @@ func (e *Executor) Run(ctx context.Context, command, cwd string) *Result {
 
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			// Command ran and returned non-zero. Normal. Not a Go-level error.
 			exitCode = exitErr.ExitCode()
 		} else {
-			// Could not start the process at all (binary not found, bad cwd, etc.)
 			e.log.Error("exec failed to start", "cmd", command, "err", err)
 			return &Result{
 				Duration: duration,

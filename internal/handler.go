@@ -27,7 +27,6 @@ func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp
 		return mcp.NewToolResultError("missing required parameter: command"), nil
 	}
 
-	// Default cwd to first allowed dir if caller did not specify one.
 	cwd := h.cfg.AllowedDirs[0]
 	if v, ok := args["cwd"].(string); ok && v != "" {
 		cwd = v
@@ -42,13 +41,10 @@ func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp
 
 	result := h.executor.Run(ctx, command, cwd)
 
-	// Process could not start at all — surface as a tool-level error.
 	if result.Error != "" {
 		return mcp.NewToolResultError(result.Error), nil
 	}
 
-	// Command ran (even if exit_code != 0) — return full structured result.
-	// The caller can inspect exit_code and stderr to decide what happened.
 	resp := map[string]any{
 		"stdout":    result.Stdout,
 		"stderr":    result.Stderr,
@@ -68,7 +64,6 @@ func (h *Handler) HandleListDirs(_ context.Context, _ mcp.CallToolRequest) (*mcp
 	return mcp.NewToolResultText(strings.Join(h.cfg.AllowedDirs, "\n")), nil
 }
 
-// isAllowedDir returns true if cwd is exactly an allowed dir or a subpath of one.
 func (h *Handler) isAllowedDir(cwd string) bool {
 	for _, allowed := range h.cfg.AllowedDirs {
 		if cwd == allowed || strings.HasPrefix(cwd, allowed+"/") {
