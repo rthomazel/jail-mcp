@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"context"
@@ -15,11 +15,11 @@ type Handler struct {
 	log      *Logger
 }
 
-func newHandler(executor *Executor, cfg *Config, log *Logger) *Handler {
+func NewHandler(executor *Executor, cfg *Config, log *Logger) *Handler {
 	return &Handler{executor: executor, cfg: cfg, log: log}
 }
 
-func (h *Handler) handleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	args := req.Params.Arguments
 
 	command, ok := args["command"].(string)
@@ -64,7 +64,7 @@ func (h *Handler) handleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp
 	return mcp.NewToolResultText(string(b)), nil
 }
 
-func (h *Handler) handleListDirs(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (h *Handler) HandleListDirs(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	return mcp.NewToolResultText(strings.Join(h.cfg.AllowedDirs, "\n")), nil
 }
 

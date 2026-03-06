@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"bytes"
@@ -25,7 +25,7 @@ type Executor struct {
 	log *Logger
 }
 
-func newExecutor(cfg *Config, log *Logger) *Executor {
+func NewExecutor(cfg *Config, log *Logger) *Executor {
 	return &Executor{cfg: cfg, log: log}
 }
 

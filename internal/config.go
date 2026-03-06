@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"fmt"
@@ -13,8 +13,8 @@ type Config struct {
 	LogFile     string
 }
 
-// loadConfig reads configuration from environment variables. See README for details.
-func loadConfig() (*Config, error) {
+// LoadConfig reads configuration from environment variables. See README for details.
+func LoadConfig() (*Config, error) {
 	dirsRaw := os.Getenv("JAIL_MCP_DIRS")
 	if dirsRaw == "" {
 		return nil, fmt.Errorf("JAIL_MCP_DIRS is required (colon-separated list of allowed dirs)")

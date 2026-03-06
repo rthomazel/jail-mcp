@@ -14,15 +14,17 @@ err() {
 
 cmd="${1:-help}"
 
+    # AGENTS: run commands directly, you cant execute this file
 case "$cmd" in
   lint)
-    # AGENTS: run this command directly, you cant execute this file
     golangci-lint run ./...
     ;;
   server)
     # TODO: add to container dependencies, agents cant see go tools under $HOME/go
-    # AGENTS: run this command directly, you cant execute this file
-    "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go run .
+    "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go run main.go
+    ;;
+  build)
+    go build -o bin/server main.go
     ;;
   help|*)
     echo "Usage: ./run <command>"

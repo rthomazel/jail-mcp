@@ -6,6 +6,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/tcodes0/jail-mcp/internal"
 )
 
 var version = "dev"
@@ -18,12 +19,12 @@ func main() {
 }
 
 func run() error {
-	cfg, err := loadConfig()
+	cfg, err := internal.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("config: %w", err)
 	}
 
-	log, err := newLogger(cfg.LogFile)
+	log, err := internal.NewLogger(cfg.LogFile)
 	if err != nil {
 		return fmt.Errorf("logger: %w", err)
 	}
@@ -31,8 +32,8 @@ func run() error {
 
 	log.Info("jail-mcp starting", "version", version, "dirs", cfg.AllowedDirs, "timeout", cfg.Timeout)
 
-	executor := newExecutor(cfg, log)
-	handler := newHandler(executor, cfg, log)
+	executor := internal.NewExecutor(cfg, log)
+	handler := internal.NewHandler(executor, cfg, log)
 
 	s := server.NewMCPServer(
 		"jail-mcp",
@@ -46,14 +47,14 @@ func run() error {
 			mcp.WithString("command", mcp.Required(), mcp.Description("Shell command to execute")),
 			mcp.WithString("cwd", mcp.Description("Working directory. Must be one of the allowed dirs or a subpath. Defaults to first allowed dir.")),
 		),
-		handler.handleExec,
+		handler.HandleExec,
 	)
 
 	s.AddTool(
 		mcp.NewTool("list_dirs",
 			mcp.WithDescription("List the directories available inside this container."),
 		),
-		handler.handleListDirs,
+		handler.HandleListDirs,
 	)
 
 	log.Info("serving on stdio")
