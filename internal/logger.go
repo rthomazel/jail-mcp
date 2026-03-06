@@ -30,7 +30,8 @@ func NewLogger(logPath string) (*Logger, error) {
 		return nil, err
 	}
 
-	handler := slog.NewTextHandler(f, &slog.HandlerOptions{
+	w := io.MultiWriter(f, os.Stderr)
+	handler := slog.NewTextHandler(w, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	})
 

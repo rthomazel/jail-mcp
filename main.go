@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
 	"runtime/debug"
 
@@ -14,13 +13,6 @@ import (
 var version = "dev"
 
 func main() {
-	defer func() {
-		if msg := recover(); msg != nil {
-			slog.Error("panic", "msg", msg, "stack", string(debug.Stack()))
-			os.Exit(1)
-		}
-	}()
-
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
 		os.Exit(1)
@@ -38,6 +30,14 @@ func run() error {
 		return fmt.Errorf("logger: %w", err)
 	}
 	defer log.Close()
+
+	defer func() {
+		if msg := recover(); msg != nil {
+			log.Error("panic", "msg", msg, "stack", string(debug.Stack()))
+			log.Close()
+			os.Exit(1)
+		}
+	}()
 
 	log.Info("jail-mcp starting", "version", version, "dirs", cfg.AllowedDirs, "timeout", cfg.Timeout)
 
