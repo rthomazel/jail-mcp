@@ -23,7 +23,8 @@ Copy it to `docker-compose.user.yml` and edit that instead:
 cp docker-compose.yml docker-compose.user.yml
 ```
 
-Update the volume paths to point to your real projects.
+Update the volume paths to point to your real work.
+Mount projects under `/projects`, this path is hardcoded.
 Paths bind-mounted as volumes _can be modified in your machine_ which is what you want for the agent to work for you.
 The example configurations shows how to add read-only paths, for things you don't want to risk, like .git.
 
