@@ -1,20 +1,20 @@
 # ── Stage 1: build ────────────────────────────────────────────────────────────
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /build
-COPY go.mod go.sum ./
+COPY . .
 RUN go mod download
 
-COPY *.go ./
+ARG VERSION
 RUN CGO_ENABLED=0 go build \
-    -ldflags="-s -w -X main.version=$(date +%Y%m%d)" \
+    # trim debug info and set version
+    -ldflags="-s -w -X main.version=${VERSION:-dev}" \
     -o jail-mcp .
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
-# Ubuntu 24.04 for a generous, real toolchain.
-# Alpine's busybox is too minimal for real dev work.
 FROM ubuntu:24.04
 
+# skip prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
@@ -36,10 +36,8 @@ RUN apt-get update && apt-get install -y \
     dnsutils iputils-ping netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
-# Log directory — bind-mounted at runtime so logs survive container restarts.
 RUN mkdir -p /var/log/jail-mcp
 
 COPY --from=builder /build/jail-mcp /usr/local/bin/jail-mcp
 
-# MCP runs over stdio — no port needed.
 CMD ["jail-mcp"]

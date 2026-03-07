@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
+	"runtime/debug"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/tcodes0/jail-mcp/internal"
 )
-
-var version = "dev"
 
 func main() {
 	if err := run(); err != nil {
@@ -18,25 +19,32 @@ func main() {
 }
 
 func run() error {
-	cfg, err := loadConfig()
+	cfg, err := internal.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("config: %w", err)
 	}
 
-	log, err := newLogger(cfg.LogFile)
+	logFile, err := internal.NewLogger(cfg.LogFile)
 	if err != nil {
 		return fmt.Errorf("logger: %w", err)
 	}
-	defer log.Close()
+	defer func() { _ = logFile.Close() }()
 
-	log.Info("jail-mcp starting", "version", version, "dirs", cfg.AllowedDirs, "timeout", cfg.Timeout)
+	defer func() {
+		if msg := recover(); msg != nil {
+			slog.Error("panic", "msg", msg, "stack", string(debug.Stack()))
+			_ = logFile.Close()
+			os.Exit(1)
+		}
+	}()
 
-	executor := newExecutor(cfg, log)
-	handler := newHandler(executor, cfg, log)
+	slog.Info("jail-mcp starting", "timeout", cfg.Timeout, "log", cfg.LogFile)
+
+	handler := internal.NewHandler(cfg)
 
 	s := server.NewMCPServer(
 		"jail-mcp",
-		version,
+		"local",
 		server.WithToolCapabilities(false),
 	)
 
@@ -44,21 +52,22 @@ func run() error {
 		mcp.NewTool("shell_exec",
 			mcp.WithDescription("Execute any shell command inside the container. Returns stdout, stderr, exit code, and duration."),
 			mcp.WithString("command", mcp.Required(), mcp.Description("Shell command to execute")),
-			mcp.WithString("cwd", mcp.Description("Working directory. Must be one of the allowed dirs or a subpath. Defaults to first allowed dir.")),
+			mcp.WithString("cwd", mcp.Description("Working directory inside the container. Defaults to /")),
 		),
-		handler.handleExec,
+		handler.HandleExec,
 	)
 
 	s.AddTool(
-		mcp.NewTool("list_dirs",
-			mcp.WithDescription("List the directories available inside this container."),
+		mcp.NewTool("context",
+			mcp.WithDescription("Returns environment context: mounted projects, OS, available tools, disk space, and log file path. Call this at the start of a session to orient yourself."),
 		),
-		handler.handleListDirs,
+		handler.HandleContext,
 	)
 
-	log.Info("serving on stdio")
+	slog.Info("serving on stdio")
 	if err := server.ServeStdio(s); err != nil {
 		return fmt.Errorf("server: %w", err)
 	}
+
 	return nil
 }

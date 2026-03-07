@@ -1,14 +1,18 @@
+# this file has example values
 services:
   jail-mcp:
     build: .
+    image: jail-mcp
     stdin_open: true
     tty: false
     environment:
-      JAIL_MCP_DIRS: /workspace:/data
-      JAIL_MCP_TIMEOUT: 60s
-      JAIL_MCP_LOG: /var/log/jail-mcp/jail.log
+      JAIL_MCP_TIMEOUT: 15s
+      JAIL_MCP_LOG_FILE: /var/log/jail-mcp/server.log
     volumes:
-      - /Users/you/myproject:/workspace
-      - /Users/you/myproject/.git:/workspace/.git:ro
-      # - /Users/you/somedata:/data
-      - /Users/you/.jail-mcp-logs:/var/log/jail-mcp
+      # projects
+      - /Users/you/helloworld:/projects/helloworld
+      - /Users/you/helloworld/.git:/projects/helloworld/.git:ro
+      - /Users/you/fizzbuzz:/projects/fizzbuzz
+      - /Users/you/fizzbuzz/.git:/projects/fizzbuzz/.git:ro
+      # logs
+      - /Users/you/.jail-mcp.log.txt:/var/log/jail-mcp/server.log
