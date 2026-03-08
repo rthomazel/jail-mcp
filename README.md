@@ -21,12 +21,16 @@ Mount projects under `/projects`, this path is hardcoded.
 Paths bind-mounted as volumes _can be modified in your machine_ which is what you want for the agent to work for you.
 The example configurations shows how to add read-only paths, for things you don't want to risk, like .git.
 
+_Linux:_ consider using [rootless docker](https://docs.docker.com/engine/security/rootless)
+
 **2. Build**
 
 ```bash
 go mod tidy
 ./run docker-build
 ```
+
+Log file must exist in host before the server is brought up.
 
 **2.1. Configuration**
 
@@ -37,15 +41,19 @@ See environment section in docker-compose.yml.
 
 For Claude desktop, add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
+_Linux:_ `~/.config/Claude/claude_desktop_config.json`
+
 ```json
 {
   "mcpServers": {
     "jail-mcp": {
+      // Linux: just "docker"
       "command": "/Applications/Docker.app/Contents/Resources/bin/docker",
       "args": [
         "compose",
         "-f",
-        "/Users/you/jail-mcp/docker-compose.user.yml",
+        // Linux: /home/you
+        "/Users/you/jail-mcp/docker-compose.yml",
         "run",
         "--rm",
         "-i",

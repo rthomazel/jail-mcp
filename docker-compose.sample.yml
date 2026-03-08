@@ -15,4 +15,5 @@ services:
       - /Users/you/fizzbuzz:/projects/fizzbuzz
       - /Users/you/fizzbuzz/.git:/projects/fizzbuzz/.git:ro
       # logs
-      - /Users/you/.jail-mcp.log.txt:/var/log/jail-mcp/server.log
+      # use "touch /Users/you/jail-mcp.log.txt" to create in host
+      - /Users/you/jail-mcp.log.txt:/var/log/jail-mcp/server.log
