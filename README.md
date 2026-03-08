@@ -30,8 +30,6 @@ go mod tidy
 ./run docker-build
 ```
 
-Log file must exist in host before the server is brought up.
-
 **2.1. Configuration**
 
 See environment section in docker-compose.yml.
@@ -68,7 +66,7 @@ Restart client.
 
 ## Logs
 
-Logs are written in plain text to `JAIL_MCP_LOG_FILE` and to stderr.
+Logs are written in plain text to stderr.
 
 ## Dev
 

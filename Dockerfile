@@ -36,8 +36,6 @@ RUN apt-get update && apt-get install -y \
     dnsutils iputils-ping netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /var/log/jail-mcp
-
 COPY --from=builder /build/jail-mcp /usr/local/bin/jail-mcp
 
 CMD ["jail-mcp"]

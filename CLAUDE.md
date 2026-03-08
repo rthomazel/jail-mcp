@@ -6,9 +6,8 @@ Call `context` tool first. It returns mounted project paths, available tools, an
 
 ```
 main.go                  server wiring, tool registration
-internal/config.go       Config struct, env var loading, defaults
+internal/config.go       Config struct (Timeout), env var loading, defaults
 internal/handler.go      HandleContext, HandleExec, runCommand (all in one file)
-internal/logger.go       slog.SetDefault, tees to file + stderr, returns io.Closer
 ```
 
 ## Design decisions worth preserving

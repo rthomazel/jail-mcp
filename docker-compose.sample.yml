@@ -7,13 +7,9 @@ services:
     tty: false
     environment:
       JAIL_MCP_TIMEOUT: 15s
-      JAIL_MCP_LOG_FILE: /var/log/jail-mcp/server.log
     volumes:
       # projects
       - /Users/you/helloworld:/projects/helloworld
       - /Users/you/helloworld/.git:/projects/helloworld/.git:ro
       - /Users/you/fizzbuzz:/projects/fizzbuzz
       - /Users/you/fizzbuzz/.git:/projects/fizzbuzz/.git:ro
-      # logs
-      # use "touch /Users/you/jail-mcp.log.txt" to create in host
-      - /Users/you/jail-mcp.log.txt:/var/log/jail-mcp/server.log

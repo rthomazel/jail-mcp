@@ -24,21 +24,19 @@ func run() error {
 		return fmt.Errorf("config: %w", err)
 	}
 
-	logFile, err := internal.NewLogger(cfg.LogFile)
-	if err != nil {
-		return fmt.Errorf("logger: %w", err)
-	}
-	defer func() { _ = logFile.Close() }()
+	slog.SetDefault(slog.New(slog.NewTextHandler(
+		os.Stderr,
+		&slog.HandlerOptions{Level: slog.LevelInfo},
+	)))
 
 	defer func() {
 		if msg := recover(); msg != nil {
 			slog.Error("panic", "msg", msg, "stack", string(debug.Stack()))
-			_ = logFile.Close()
 			os.Exit(1)
 		}
 	}()
 
-	slog.Info("jail-mcp starting", "timeout", cfg.Timeout, "log", cfg.LogFile)
+	slog.Info("jail-mcp starting", "timeout", cfg.Timeout)
 
 	handler := internal.NewHandler(cfg)
 
