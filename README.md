@@ -3,24 +3,17 @@
 MCP server providing shell access to clients, jailed in a container.
 
 > **Running outside Docker is dangerous.**
-The server runs as root in a container that dies at session end.
+> The server runs as root in a container that dies at session end.
 
 ## Setup
 
-**1. Build**
+**1. Configure container**
+
+Do not edit `docker-compose.sample.yml`.
+Copy it to `docker-compose.yml` and edit that instead:
 
 ```bash
-go mod tidy
-./run docker-build
-```
-
-**2. Configure your mounts**
-
-`docker-compose.yml` is a sample file — do not edit it.
-Copy it to `docker-compose.user.yml` and edit that instead:
-
-```bash
-cp docker-compose.yml docker-compose.user.yml
+cp docker-compose.sample.yml docker-compose.yml
 ```
 
 Update the volume paths to point to your real work.
@@ -28,9 +21,17 @@ Mount projects under `/projects`, this path is hardcoded.
 Paths bind-mounted as volumes _can be modified in your machine_ which is what you want for the agent to work for you.
 The example configurations shows how to add read-only paths, for things you don't want to risk, like .git.
 
+**2. Build**
+
+```bash
+go mod tidy
+./run docker-build
+```
+
 **2.1. Configuration**
 
 See environment section in docker-compose.yml.
+.env does not affect the containerized application, just local development.
 
 **3. Wire up clients**
 
