@@ -48,7 +48,7 @@ func run() error {
 
 	s.AddTool(
 		mcp.NewTool("shell_exec",
-			mcp.WithDescription("Execute any shell command inside the container. Returns stdout, stderr, exit code, and duration."),
+			mcp.WithDescription("Execute any shell command synchronously inside the container. Returns stdout, stderr, exit code, and duration."),
 			mcp.WithString("command", mcp.Required(), mcp.Description("Shell command to execute")),
 			mcp.WithString("cwd", mcp.Description("Working directory inside the container. Defaults to /")),
 		),
@@ -57,7 +57,7 @@ func run() error {
 
 	s.AddTool(
 		mcp.NewTool("context",
-			mcp.WithDescription("Returns environment context: mounted projects, OS, available tools, disk space, and log file path. Call this at the start of a session to orient yourself."),
+			mcp.WithDescription("Returns environment context. Call this at the start of a session to orient yourself."),
 		),
 		handler.HandleContext,
 	)
