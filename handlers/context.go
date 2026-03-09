@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"io"
 	"log/slog"
 	"os"
 	"sort"
@@ -24,10 +25,16 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		return strings.TrimSpace(r.Stdout)
 	}
 
-	mounts, err := mountedPaths()
+	var mounts []string
+	file, err := os.Open("/proc/mounts")
 	if err != nil {
 		slog.Error("failed to read mounts", "err", err)
-		mounts = []string{}
+	} else {
+		defer func() { _ = file.Close() }()
+		mounts, err = parseMounts(file)
+		if err != nil {
+			slog.Error("failed to parse mounts", "err", err)
+		}
 	}
 
 	info := map[string]any{
@@ -55,15 +62,9 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 	return mcp.NewToolResultText(string(b)), nil
 }
 
-func mountedPaths() ([]string, error) {
-	file, err := os.Open("/proc/mounts")
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = file.Close() }()
-
+func parseMounts(r io.Reader) ([]string, error) {
 	var candidates []string
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		fields := strings.Fields(scanner.Text())
 		if len(fields) < 3 {
@@ -76,18 +77,19 @@ func mountedPaths() ([]string, error) {
 			continue
 		}
 
-		skip := lo.SomeBy(skipPrefixes, func(p string) bool {
+		isSkipped := lo.SomeBy(skipPrefixes, func(p string) bool {
 			return mountpoint == p || strings.HasPrefix(mountpoint, p+"/")
 		})
-		if skip {
+		if isSkipped {
 			continue
 		}
 
 		candidates = append(candidates, mountpoint)
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, err
+	scanErr := scanner.Err()
+	if scanErr != nil {
+		return nil, scanErr
 	}
 
 	sort.Slice(candidates, func(i, j int) bool {
@@ -95,14 +97,12 @@ func mountedPaths() ([]string, error) {
 	})
 
 	kept := lo.Reduce(candidates, func(acc []string, candidate string, _ int) []string {
-		child := lo.SomeBy(acc, func(k string) bool {
+		isChild := lo.SomeBy(acc, func(k string) bool {
 			return strings.HasPrefix(candidate, k+"/")
 		})
-
-		if child {
+		if isChild {
 			return acc
 		}
-
 		return append(acc, candidate)
 	}, []string{})
 

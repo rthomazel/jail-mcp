@@ -52,6 +52,8 @@ func (h *Handler) removeJobsOlderThan(deadline time.Duration) {
 	}
 }
 
+// ID generation and storage are done under a single write lock to prevent
+// two concurrent calls from claiming the same ID.
 func (h *Handler) addJob(j *job) {
 	h.mu.Lock()
 	defer h.mu.Unlock()

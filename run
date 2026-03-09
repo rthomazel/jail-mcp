@@ -26,6 +26,14 @@ case "$cmd" in
     # TODO: add to container dependencies, agents cant see go tools under $HOME/go
     "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go run main.go
     ;;
+  # -- run tests
+  test)
+    "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go test -race ./...
+    ;;
+  # -- run gofumpt formatter
+  format)
+    gofumpt -l -w .
+    ;;
   # -- build local binary to bin/server
   build)
     go build -o bin/server main.go
