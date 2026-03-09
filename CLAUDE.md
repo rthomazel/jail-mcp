@@ -43,3 +43,11 @@ go: avoid multi line if conditions with samber/lo functions.
 when we refactor, minimize renames unless asked for.
 add tests when asked for; look for code that is complex or prone to change/ bugs; if tests never break they add no value.
 run formatter as last step after making code changes.
+
+## File access
+
+All file access goes through `exec_sync` shell commands — not any built-in editor or file tools.
+
+Read:  `cat /projects/foo/bar.go`
+Write: `cat > /path/file << 'EOF'\n...\nEOF`
+Edit:  read the file first, then rewrite with `cat >` or use `sed -i`

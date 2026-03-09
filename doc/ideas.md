@@ -29,9 +29,22 @@ IDs in the response, for convenience without changing the default behavior.
 ## language version management
 
 The Dockerfile currently pins language versions, which is a project/user concern.
-The right answer is a version manager (`nvm` for Node, `mise` for polyglot) installed in the
-container. Projects bring `.nvmrc`, `.node-version`, or `.mise.toml` and the setup tool reads them.
-The Dockerfile provides the version manager, not the language version.
+The right answer is mise installed in the container. The Dockerfile provides the version manager,
+not the language version.
+
+Projects declare versions in `.tool-versions` at their root:
+
+```
+nodejs 22.0.0
+go 1.25.0
+python 3.12.0
+```
+
+The `setup` tool (see above) would run `mise install` in each mounted project directory.
+mise reads `.tool-versions` and installs the declared versions.
+
+Users add `.tool-versions` to their projects and use mise locally as well, keeping
+local and container environments in sync.
 
 ## hidden mounts
 
