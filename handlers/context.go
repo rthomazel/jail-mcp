@@ -56,14 +56,14 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 }
 
 func mountedPaths() ([]string, error) {
-	f, err := os.Open("/proc/mounts")
+	file, err := os.Open("/proc/mounts")
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = f.Close() }()
+	defer func() { _ = file.Close() }()
 
 	var candidates []string
-	scanner := bufio.NewScanner(f)
+	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		fields := strings.Fields(scanner.Text())
 		if len(fields) < 3 {
@@ -76,9 +76,10 @@ func mountedPaths() ([]string, error) {
 			continue
 		}
 
-		if lo.SomeBy(skipPrefixes, func(p string) bool {
+		skip := lo.SomeBy(skipPrefixes, func(p string) bool {
 			return mountpoint == p || strings.HasPrefix(mountpoint, p+"/")
-		}) {
+		})
+		if skip {
 			continue
 		}
 
@@ -89,17 +90,19 @@ func mountedPaths() ([]string, error) {
 		return nil, err
 	}
 
-	// sort by length for parent-first deduplication
 	sort.Slice(candidates, func(i, j int) bool {
 		return len(candidates[i]) < len(candidates[j])
 	})
 
 	kept := lo.Reduce(candidates, func(acc []string, candidate string, _ int) []string {
-		if lo.SomeBy(acc, func(k string) bool {
+		child := lo.SomeBy(acc, func(k string) bool {
 			return strings.HasPrefix(candidate, k+"/")
-		}) {
+		})
+
+		if child {
 			return acc
 		}
+
 		return append(acc, candidate)
 	}, []string{})
 
