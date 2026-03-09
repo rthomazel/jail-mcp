@@ -11,6 +11,7 @@ services:
     volumes:
       # projects
       - /Users/you/helloworld:/projects/helloworld
+      # :ro adds a path as read-only, must be after parent path
       - /Users/you/helloworld/.git:/projects/helloworld/.git:ro
       - /Users/you/fizzbuzz:/projects/fizzbuzz
       - /Users/you/fizzbuzz/.git:/projects/fizzbuzz/.git:ro

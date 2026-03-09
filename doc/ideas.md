@@ -33,7 +33,11 @@ The right answer is a version manager (`nvm` for Node, `mise` for polyglot) inst
 container. Projects bring `.nvmrc`, `.node-version`, or `.mise.toml` and the setup tool reads them.
 The Dockerfile provides the version manager, not the language version.
 
-## what not to add
+## hidden mounts
+
+overwrite sensitive directories and files with blank mounts
+
+# what not to add
 
 - filesystem MCP tool — redundant, shell already does cat/ls/cp/find
 - command allowlists — defeats the purpose, Docker is the boundary
