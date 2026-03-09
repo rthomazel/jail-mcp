@@ -1,16 +1,20 @@
 package internal
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"os/exec"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/samber/lo"
 )
 
 type Handler struct {
@@ -27,11 +31,17 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		return strings.TrimSpace(r.Stdout)
 	}
 
+	mounts, err := mountedPaths()
+	if err != nil {
+		slog.Error("failed to read mounts", "err", err)
+		mounts = []string{}
+	}
+
 	info := map[string]any{
 		"os":       gather("cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"'"),
 		"arch":     gather("uname -m"),
-		"projects": gather("ls -d /projects/*/ 2>/dev/null | sed 's|/$||' || echo none"),
-		"disk": gather("df -h / | awk 'NR==2{print $4\" free of \"$2}'"),
+		"projects": strings.Join(mounts, "\n"),
+		"disk":     gather("df -h / | awk 'NR==2{print $4\" free of \"$2}'"),
 		"tools": map[string]string{
 			"bash":    gather("bash --version | head -1 | cut -d' ' -f4"),
 			"git":     gather("git --version | cut -d' ' -f3"),
@@ -49,6 +59,68 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 	}
 
 	return mcp.NewToolResultText(string(b)), nil
+}
+
+var (
+	skipFstypes  = []string{"proc", "sysfs", "tmpfs", "devpts", "cgroup2", "cgroup", "mqueue", "overlay"}
+	skipPrefixes = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
+)
+
+func mountedPaths() ([]string, error) {
+	f, err := os.Open("/proc/mounts")
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	var candidates []string
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+		if len(fields) < 3 {
+			continue
+		}
+
+		mountpoint, fstype := fields[1], fields[2]
+
+		if mountpoint == "/" || lo.Contains(skipFstypes, fstype) {
+			continue
+		}
+
+		shouldSkip := lo.SomeBy(skipPrefixes, func(p string) bool {
+			return mountpoint == p || strings.HasPrefix(mountpoint, p+"/")
+		})
+
+		if shouldSkip {
+			continue
+		}
+
+		candidates = append(candidates, mountpoint)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	// sort by length for deduplication
+	sort.Slice(candidates, func(i, j int) bool {
+		return len(candidates[i]) < len(candidates[j])
+	})
+
+	kept := lo.Reduce(candidates, func(acc []string, candidate string, _ int) []string {
+		isChild := lo.SomeBy(acc, func(k string) bool {
+			return strings.HasPrefix(candidate, k+"/")
+		})
+
+		if isChild {
+			return acc
+		}
+
+		return append(acc, candidate)
+	}, []string{})
+
+	sort.Strings(kept)
+	return kept, nil
 }
 
 func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {

@@ -16,11 +16,6 @@ Could run them with goroutines and be meaningfully faster.
 Timeout is global via `JAIL_MCP_TIMEOUT`.
 Letting `shell_exec` accept an optional `timeout` param would be useful for known slow commands.
 
-## dynamic mounts in context
-
-`context` hardcodes `/projects` as the mount point.
-Should read `/proc/mounts` or `df` and report what's actually mounted — works for any volume layout.
-
 ## what not to add
 
 - filesystem MCP tool — redundant, shell already does cat/ls/cp/find

@@ -17,7 +17,7 @@ cp docker-compose.sample.yml docker-compose.yml
 ```
 
 Update the volume paths to point to your real work.
-Mount projects under `/projects`, this path is hardcoded.
+The server discovers them dynamically.
 Paths bind-mounted as volumes _can be modified in your machine_ which is what you want for the agent to work for you.
 The example configurations shows how to add read-only paths, for things you don't want to risk, like .git.
 

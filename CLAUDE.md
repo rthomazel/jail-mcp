@@ -1,6 +1,6 @@
 # jail-mcp — agent context
 
-Call `context` tool first. It returns mounted project paths, available tools, and the log file location.
+Call `context` tool first. It returns mounted volume paths, available tools, and the log file location.
 
 ## Code layout
 
