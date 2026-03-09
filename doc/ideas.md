@@ -8,13 +8,30 @@ Could run them with goroutines and be meaningfully faster.
 ## per-command timeout
 
 Timeout is global via `JAIL_MCP_TIMEOUT`.
-Letting `shell_exec` accept an optional `timeout` param would be useful for known slow commands.
+Letting `exec_sync` accept an optional `timeout` param would be useful for known slow commands.
 
 ## sqlite db with command stats
 
 Server would tokenize commands with weights, base command has higher weight, then flags.
 Normalize input.
 Expose historic command stats to allow planning when to use exec sync or background.
+
+## project setup tool
+
+A dedicated `setup` tool that discovers and installs project dependencies for mounted volumes.
+Scans each mounted path for known manifests (`go.mod`+`tools.go`, `package.json`) and runs
+the appropriate install command as a background job per project. Jobs run in series to benefit
+from shared tools across projects. Returns a `{path: job_id}` map. Errors only visible on status poll.
+
+`context` could accept a `run_setup` param (default false) to fire setup jobs and include their
+IDs in the response, for convenience without changing the default behavior.
+
+## language version management
+
+The Dockerfile currently pins language versions, which is a project/user concern.
+The right answer is a version manager (`nvm` for Node, `mise` for polyglot) installed in the
+container. Projects bring `.nvmrc`, `.node-version`, or `.mise.toml` and the setup tool reads them.
+The Dockerfile provides the version manager, not the language version.
 
 ## what not to add
 
