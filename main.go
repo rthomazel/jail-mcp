@@ -8,6 +8,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/tcodes0/jail-mcp/handlers"
 	"github.com/tcodes0/jail-mcp/internal"
 )
 
@@ -36,9 +37,9 @@ func run() error {
 		}
 	}()
 
-	slog.Info("jail-mcp starting", "timeout", cfg.Timeout)
+	slog.Info("jail-mcp starting", "timeout", cfg.Timeout, "background_timeout", cfg.BackgroundTimeout)
 
-	handler := internal.NewHandler(cfg)
+	h := handlers.New(cfg)
 
 	s := server.NewMCPServer(
 		"jail-mcp",
@@ -47,19 +48,36 @@ func run() error {
 	)
 
 	s.AddTool(
-		mcp.NewTool("shell_exec",
-			mcp.WithDescription("Execute any shell command synchronously inside the container. Returns stdout, stderr, exit code, and duration."),
-			mcp.WithString("command", mcp.Required(), mcp.Description("Shell command to execute")),
-			mcp.WithString("cwd", mcp.Description("Working directory inside the container. Defaults to /")),
-		),
-		handler.HandleExec,
-	)
-
-	s.AddTool(
 		mcp.NewTool("context",
 			mcp.WithDescription("Returns environment context. Call this at the start of a session to orient yourself."),
 		),
-		handler.HandleContext,
+		h.HandleContext,
+	)
+
+	s.AddTool(
+		mcp.NewTool("exec_sync",
+			mcp.WithDescription("Execute a shell command synchronously. Returns stdout, stderr, exit code, and duration. Times out after "+cfg.Timeout.String()+"."),
+			mcp.WithString("command", mcp.Required(), mcp.Description("Shell command to execute")),
+			mcp.WithString("cwd", mcp.Description("Working directory. Defaults to /")),
+		),
+		h.HandleExec,
+	)
+
+	s.AddTool(
+		mcp.NewTool("exec_background",
+			mcp.WithDescription("Execute a long-running shell command in the background. Returns a job_id immediately. Use exec_status to poll for results. Times out after "+cfg.BackgroundTimeout.String()+"."),
+			mcp.WithString("command", mcp.Required(), mcp.Description("Shell command to execute")),
+			mcp.WithString("cwd", mcp.Description("Working directory. Defaults to /")),
+		),
+		h.HandleExecBackground,
+	)
+
+	s.AddTool(
+		mcp.NewTool("status",
+			mcp.WithDescription("Poll the status of a background job. Returns done, stdout, stderr, exit_code (if done), and duration."),
+			mcp.WithString("job_id", mcp.Required(), mcp.Description("Job ID returned by exec_background")),
+		),
+		h.HandleStatus,
 	)
 
 	slog.Info("serving on stdio")
