@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y \
     # build tools
     gcc g++ build-essential pkg-config \
     # scripting
-    python3 python3-pip nodejs npm \
+    python3 python3-pip \
     # file tools
     zip unzip tar \
     # text / search
@@ -36,10 +36,16 @@ RUN apt-get update && apt-get install -y \
     dnsutils iputils-ping netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
+ARG MISE_VERSION=v2026.3.6
 RUN ARCH=$(dpkg --print-architecture) && \
-    curl -fsSL "https://go.dev/dl/go1.25.8.linux-${ARCH}.tar.gz" | tar -C /usr/local -xz
+    MISE_ARCH=$([ "$ARCH" = "arm64" ] && echo "arm64" || echo "x64") && \
+    curl -fsSL "https://github.com/jdx/mise/releases/download/${MISE_VERSION}/mise-${MISE_VERSION}-linux-${MISE_ARCH}" \
+    -o /usr/local/bin/mise && \
+    chmod +x /usr/local/bin/mise
 
-ENV PATH="/usr/local/go/bin:$PATH"
+ENV MISE_DATA_DIR=/mise
+ENV MISE_CONFIG_DIR=/mise
+ENV PATH="/mise/shims:$PATH"
 
 # install Go tools pinned in tools.go
 COPY --from=builder /go/bin/godotenv /usr/local/bin/godotenv

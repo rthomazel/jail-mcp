@@ -23,19 +23,25 @@ The example configurations shows how to add read-only paths, for things you don'
 
 _Linux:_ consider using [rootless docker](https://docs.docker.com/engine/security/rootless)
 
-**2. Build**
+**2. Language versions**
+
+The container provides [mise](https://mise.jdx.dev) for language version management.
+Add a `.tool-versions` file or similar to each project.
+Have the agent run `mise install` in the project directory.
+
+**3. Build**
 
 ```bash
 go mod tidy
 ./run docker-build
 ```
 
-**2.1. Configuration**
+**3.1. Configuration**
 
 See environment section in docker-compose.yml.
 .env does not affect the containerized application, just local development.
 
-**3. Wire up clients**
+**4. Wire up clients**
 
 For Claude desktop, add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
