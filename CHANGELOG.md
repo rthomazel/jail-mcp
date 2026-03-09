@@ -14,6 +14,7 @@
 - **dynamic mounts** — `context` no longer hardcodes `/projects`. reads `/proc/mounts` and reports all user-mounted volumes regardless of mount location.
 - **Go tools** — `godotenv` and `gofumpt` pinned in `tools.go` and installed from the module graph at docker build time. tool versions stay in sync with the project.
 - **Go runtime** — container installs Go 1.25 from upstream instead of the stale apt package.
+- **CI** — `pr.yml` workflow runs build, test, lint, and go mod tidy check on every PR to main.
 
 ### fixes
 
