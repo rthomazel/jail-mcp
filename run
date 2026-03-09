@@ -12,7 +12,7 @@ err() {
   echo "error: line $1" >&2
 }
 
-# AGENTS: run commands directly, you cant execute this file
+# AGENTS: run commands directly, you cannot execute this file. if making changes to this file, run chmod u+x on it.
 cmd="${1:-help}"
 
 case "$cmd" in
@@ -22,8 +22,15 @@ case "$cmd" in
     ;;
   # -- start the server with godotenv
   dev)
-    # TODO: add to container dependencies, agents cant see go tools under $HOME/go
     "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go run main.go
+    ;;
+  # -- run tests
+  test)
+    "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go test -race ./...
+    ;;
+  # -- run gofumpt formatter
+  format)
+    gofumpt -l -w .
     ;;
   # -- build local binary to bin/server
   build)
@@ -31,7 +38,7 @@ case "$cmd" in
     ;;
   # -- build docker image tagged jail-mcp with current commit as version
   docker-build)
-    docker compose -f docker-compose.user.yml build --build-arg VERSION="$(git rev-parse --short HEAD)"
+    docker compose -f docker-compose.yml build --build-arg VERSION="$(git rev-parse --short HEAD)"
     ;;
   help|*)
     echo "Usage: ./run <command>"

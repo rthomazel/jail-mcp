@@ -4,6 +4,8 @@ FROM golang:1.25-alpine AS builder
 WORKDIR /build
 COPY . .
 RUN go mod download
+RUN go install github.com/joho/godotenv/cmd/godotenv && \
+    go install mvdan.cc/gofumpt
 
 ARG VERSION
 RUN CGO_ENABLED=0 go build \
@@ -24,8 +26,6 @@ RUN apt-get update && apt-get install -y \
     curl wget git make jq \
     # build tools
     gcc g++ build-essential pkg-config \
-    # Go (for building inside the container if needed)
-    golang \
     # scripting
     python3 python3-pip nodejs npm \
     # file tools
@@ -36,7 +36,14 @@ RUN apt-get update && apt-get install -y \
     dnsutils iputils-ping netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /var/log/jail-mcp
+RUN ARCH=$(dpkg --print-architecture) && \
+    curl -fsSL "https://go.dev/dl/go1.25.8.linux-${ARCH}.tar.gz" | tar -C /usr/local -xz
+
+ENV PATH="/usr/local/go/bin:$PATH"
+
+# install Go tools pinned in tools.go
+COPY --from=builder /go/bin/godotenv /usr/local/bin/godotenv
+COPY --from=builder /go/bin/gofumpt /usr/local/bin/gofumpt
 
 COPY --from=builder /build/jail-mcp /usr/local/bin/jail-mcp
 

@@ -1,0 +1,58 @@
+name: pr
+run-name: ${{ github.head_ref }}@${{ github.sha }}
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.7
+
+      - uses: actions/setup-go@v5.0.2
+        with:
+          go-version: "1.25"
+
+      - run: ./run build
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.7
+
+      - uses: actions/setup-go@v5.0.2
+        with:
+          go-version: "1.25"
+
+      - run: go install github.com/joho/godotenv/cmd/godotenv@v1.5.1
+      - run: cp .env-default .env && ./run test
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.7
+
+      - uses: actions/setup-go@v5.0.2
+        with:
+          go-version: "1.25"
+
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.10
+
+  go-mod:
+    name: go_mod_tidy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.7
+
+      - uses: actions/setup-go@v5.0.2
+        with:
+          go-version: "1.25"
+
+      - uses: j0hnsmith/go-mod-check@v1.0.0
