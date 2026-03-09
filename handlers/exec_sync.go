@@ -15,10 +15,10 @@ import (
 )
 
 type commandResult struct {
-	stdout   string
-	stderr   string
-	exitCode int
-	duration time.Duration
+	Stdout   string        `json:"stdout"`
+	Stderr   string        `json:"stderr"`
+	ExitCode int           `json:"exit_code"`
+	Duration string        `json:"duration"`
 	err      string
 }
 
@@ -36,17 +36,11 @@ func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp
 	}
 
 	result := runCommand(ctx, h.cfg, command, cwd)
-
 	if result.err != "" {
 		return mcp.NewToolResultError(result.err), nil
 	}
 
-	b, err := json.Marshal(map[string]any{
-		"stdout":    result.stdout,
-		"stderr":    result.stderr,
-		"exit_code": result.exitCode,
-		"duration":  result.duration.Round(1_000_000).String(),
-	})
+	b, err := json.Marshal(result)
 	if err != nil {
 		return mcp.NewToolResultError("failed to encode result"), nil
 	}
@@ -78,8 +72,8 @@ func runCommand(ctx context.Context, cfg *internal.Config, command, cwd string) 
 		} else {
 			slog.Error("exec failed to start", "cmd", command, "err", err)
 			return &commandResult{
-				duration: duration,
-				exitCode: -1,
+				Duration: duration.Round(1_000_000).String(),
+				ExitCode: -1,
 				err:      fmt.Sprintf("could not start process: %v", err),
 			}
 		}
@@ -88,9 +82,9 @@ func runCommand(ctx context.Context, cfg *internal.Config, command, cwd string) 
 	slog.Info("exec done", "cmd", command, "exit_code", exitCode, "duration", duration.Round(time.Millisecond))
 
 	return &commandResult{
-		stdout:   strings.TrimRight(stdout.String(), "\n"),
-		stderr:   strings.TrimRight(stderr.String(), "\n"),
-		exitCode: exitCode,
-		duration: duration,
+		Stdout:   strings.TrimRight(stdout.String(), "\n"),
+		Stderr:   strings.TrimRight(stderr.String(), "\n"),
+		ExitCode: exitCode,
+		Duration: duration.Round(1_000_000).String(),
 	}
 }

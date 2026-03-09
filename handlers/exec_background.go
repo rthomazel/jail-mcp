@@ -28,11 +28,7 @@ func (h *Handler) HandleExecBackground(_ context.Context, req mcp.CallToolReques
 		cmd:     command,
 		started: time.Now(),
 	}
-
-	h.mu.Lock()
-	job.id = h.newJobID()
-	h.jobs[job.id] = job
-	h.mu.Unlock()
+	h.addJob(job)
 
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), h.cfg.BackgroundTimeout)

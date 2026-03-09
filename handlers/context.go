@@ -21,7 +21,7 @@ var (
 func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	gather := func(cmd string) string {
 		r := runCommand(ctx, h.cfg, cmd, "/")
-		return strings.TrimSpace(r.stdout)
+		return strings.TrimSpace(r.Stdout)
 	}
 
 	mounts, err := mountedPaths()

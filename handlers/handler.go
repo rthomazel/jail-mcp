@@ -52,11 +52,16 @@ func (h *Handler) removeJobsOlderThan(deadline time.Duration) {
 	}
 }
 
-// newJobID must be called with h.mu write lock held.
-func (h *Handler) newJobID() string {
-	id := fmt.Sprintf("%04d", rand.IntN(10000))
-	if _, exists := h.jobs[id]; exists {
-		return h.newJobID()
+func (h *Handler) addJob(j *job) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	for {
+		id := fmt.Sprintf("%04d", rand.IntN(10000))
+		if _, exists := h.jobs[id]; !exists {
+			j.id = id
+			h.jobs[id] = j
+			return
+		}
 	}
-	return id
 }
