@@ -1,11 +1,5 @@
 # ideas
 
-## background jobs
-
-Long-running commands (big builds, test suites, slow installs) get killed by the timeout.
-A `run_background` tool returning a job ID and a `job_status` tool to poll it would fix this.
-Genuine gap — shell can't work around it.
-
 ## concurrent context
 
 `context` tool runs subprocesses serially.
@@ -15,6 +9,12 @@ Could run them with goroutines and be meaningfully faster.
 
 Timeout is global via `JAIL_MCP_TIMEOUT`.
 Letting `shell_exec` accept an optional `timeout` param would be useful for known slow commands.
+
+## sqlite db with command stats
+
+Server would tokenize commands with weights, base command has higher weight, then flags.
+Normalize input.
+Expose historic command stats to allow planning when to use exec sync or background.
 
 ## what not to add
 

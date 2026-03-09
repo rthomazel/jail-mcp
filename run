@@ -12,8 +12,7 @@ err() {
   echo "error: line $1" >&2
 }
 
-# AGENTS: run commands directly, you cannot execute this file.
-# AGENTS: if making changes to this file, run chmod u+x on it.
+# AGENTS: run commands directly, you cannot execute this file. if making changes to this file, run chmod u+x on it.
 cmd="${1:-help}"
 
 case "$cmd" in
@@ -23,7 +22,6 @@ case "$cmd" in
     ;;
   # -- start the server with godotenv
   dev)
-    # TODO: add to container dependencies, agents cant see go tools under $HOME/go
     "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go run main.go
     ;;
   # -- run tests
