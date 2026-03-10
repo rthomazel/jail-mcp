@@ -12,6 +12,9 @@ import (
 	"github.com/tcodes0/jail-mcp/internal"
 )
 
+// version is set at build time via -ldflags "-X main.version=..."
+var version = "local"
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
@@ -37,13 +40,13 @@ func run() error {
 		}
 	}()
 
-	slog.Info("jail-mcp starting", "timeout", cfg.Timeout, "background_timeout", cfg.BackgroundTimeout)
+	slog.Info("jail-mcp starting", "version", version, "timeout", cfg.Timeout, "background_timeout", cfg.BackgroundTimeout)
 
-	h := handlers.New(cfg)
+	h := handlers.New(cfg, version)
 
 	s := server.NewMCPServer(
 		"jail-mcp",
-		"local",
+		version,
 		server.WithToolCapabilities(false),
 	)
 

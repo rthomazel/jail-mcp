@@ -26,15 +26,17 @@ type job struct {
 }
 
 type Handler struct {
-	cfg  *internal.Config
-	jobs map[string]*job
-	mu   sync.RWMutex
+	cfg     *internal.Config
+	version string
+	jobs    map[string]*job
+	mu      sync.RWMutex
 }
 
-func New(cfg *internal.Config) *Handler {
+func New(cfg *internal.Config, version string) *Handler {
 	h := &Handler{
-		cfg:  cfg,
-		jobs: make(map[string]*job),
+		cfg:     cfg,
+		version: version,
+		jobs:    make(map[string]*job),
 	}
 	go h.removeJobsOlderThan(time.Hour)
 	return h
