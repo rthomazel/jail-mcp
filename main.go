@@ -80,6 +80,14 @@ func run() error {
 		h.HandleStatus,
 	)
 
+	s.AddTool(
+		mcp.NewTool("setup",
+			mcp.WithDescription("Discover and install dependencies for the given project paths in parallel. Returns a map of project path to job_id or error. Use the status tool to poll results."),
+			mcp.WithArray("paths", mcp.Required(), mcp.Description("Project paths to set up.")),
+		),
+		h.HandleSetup,
+	)
+
 	slog.Info("serving on stdio")
 	if err := server.ServeStdio(s); err != nil {
 		return fmt.Errorf("server: %w", err)

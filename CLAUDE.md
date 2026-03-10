@@ -29,10 +29,6 @@ go build -o bin/server main.go
 /Applications/Docker.app/Contents/Resources/bin/docker compose -f docker-compose.yml build --build-arg VERSION="$(git rev-parse --short HEAD)"
 ```
 
-## Module
-
-`github.com/tcodes0/jail-mcp` — Go 1.25 — single dep: `github.com/mark3labs/mcp-go v0.18.0`
-
 ## Other Guidelines
 
 go: run go mod tidy after making changes to go.mod and dependencies.
@@ -42,7 +38,9 @@ avoid single letter vars if their scope is not small; go: receivers, loop vars a
 go: avoid multi line if conditions with samber/lo functions.
 when we refactor, minimize renames unless asked for.
 add tests when asked for; look for code that is complex or prone to change/ bugs; if tests never break they add no value.
+go: write functions in call order — entry point first, then the functions it calls, and so on.
 run formatter as last step after making code changes.
+do not pool jobs by yourself, let me request pooling
 
 ## File access
 

@@ -4,8 +4,6 @@ FROM golang:1.25-alpine AS builder
 WORKDIR /build
 COPY . .
 RUN go mod download
-RUN go install github.com/joho/godotenv/cmd/godotenv && \
-    go install mvdan.cc/gofumpt
 
 ARG VERSION
 RUN CGO_ENABLED=0 go build \
@@ -46,10 +44,6 @@ RUN ARCH=$(dpkg --print-architecture) && \
 ENV MISE_DATA_DIR=/mise
 ENV MISE_CONFIG_DIR=/mise
 ENV PATH="/mise/shims:$PATH"
-
-# install Go tools pinned in tools.go
-COPY --from=builder /go/bin/godotenv /usr/local/bin/godotenv
-COPY --from=builder /go/bin/gofumpt /usr/local/bin/gofumpt
 
 COPY --from=builder /build/jail-mcp /usr/local/bin/jail-mcp
 

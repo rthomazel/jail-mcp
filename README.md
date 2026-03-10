@@ -23,11 +23,12 @@ The example configurations shows how to add read-only paths, for things you don'
 
 _Linux:_ consider using [rootless docker](https://docs.docker.com/engine/security/rootless)
 
-**2. Language versions**
+**1.1. Language versions**
 
 The container provides [mise](https://mise.jdx.dev) for language version management.
 Add a `.tool-versions` file or similar to each project.
 Have the agent run `mise install` in the project directory.
+`python3` and `pip` are available by default for agent's scripting needs.
 
 **3. Build**
 

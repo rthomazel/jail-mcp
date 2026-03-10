@@ -2,8 +2,11 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"log/slog"
 	"math/rand/v2"
+	"os/exec"
 	"sync"
 	"time"
 
@@ -52,8 +55,8 @@ func (h *Handler) removeJobsOlderThan(deadline time.Duration) {
 	}
 }
 
-// ID generation and storage are done under a single write lock to prevent
-// two concurrent calls from claiming the same ID.
+// addJob assigns an ID and stores the job. ID generation and storage are done
+// under a single write lock to prevent two concurrent calls from claiming the same ID.
 func (h *Handler) addJob(j *job) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -66,4 +69,47 @@ func (h *Handler) addJob(j *job) {
 			return
 		}
 	}
+}
+
+func (h *Handler) startJob(command, cwd string) *job {
+	job := &job{
+		cmd:     command,
+		started: time.Now(),
+	}
+	h.addJob(job)
+
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), h.cfg.BackgroundTimeout)
+		defer cancel()
+
+		slog.Info("job start", "job", job.id, "cmd", command, "cwd", cwd)
+
+		cmd := exec.CommandContext(ctx, "bash", "-c", command)
+		cmd.Dir = cwd
+
+		job.mu.Lock()
+		cmd.Stdout = &job.stdout
+		cmd.Stderr = &job.stderr
+		job.mu.Unlock()
+
+		err := cmd.Run()
+
+		job.mu.Lock()
+		defer job.mu.Unlock()
+
+		job.done = true
+
+		if err != nil {
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				job.exitCode = exitErr.ExitCode()
+			} else {
+				job.err = fmt.Sprintf("could not start process: %v", err)
+				job.exitCode = -1
+			}
+		}
+
+		slog.Info("job done", "job", job.id, "exit_code", job.exitCode, "duration", time.Since(job.started).Round(time.Millisecond))
+	}()
+
+	return job
 }
