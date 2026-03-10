@@ -11,6 +11,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
+// any file that matches will start a setup command
 var orderedRules = []struct {
 	file    string
 	command string
@@ -24,6 +25,16 @@ var orderedRules = []struct {
 	{"Gemfile", "bundle install"},
 	{"Cargo.toml", "cargo fetch"},
 	{"mix.exs", "mix deps.get"},
+}
+
+// first match only
+var setupScriptPriority = []string{
+	"setup.sh",
+	"setup",
+	"bin/setup",
+	"script/setup",
+	"scripts/setup",
+	"scripts/setup.sh",
 }
 
 func (h *Handler) HandleSetup(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -48,7 +59,7 @@ func (h *Handler) HandleSetup(_ context.Context, req mcp.CallToolRequest) (*mcp.
 
 		command := buildSetupCommand(mountPath)
 		if command == "" {
-			pathResult["error"] = "no supported manifests found; project may use an unsupported language or package manager"
+			pathResult["error"] = "no supported rule found; project may use an unsupported language or package manager"
 		} else {
 			j := h.startJob(command, mountPath)
 			pathResult["job_id"] = j.id
@@ -83,15 +94,6 @@ func buildSetupCommand(projectPath string) string {
 		return ""
 	}
 	return strings.Join(commands, " && ")
-}
-
-var setupScriptPriority = []string{
-	"setup.sh",
-	"setup",
-	"bin/setup",
-	"script/setup",
-	"scripts/setup",
-	"scripts/setup.sh",
 }
 
 func findSetupScript(projectPath string) (string, error) {
