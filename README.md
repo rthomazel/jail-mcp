@@ -5,6 +5,14 @@ MCP server providing shell access to clients, jailed in a container.
 > **Running outside Docker is dangerous.**
 > The server runs as root in a container that dies at session end.
 
+| tool            | use case                          |
+| --------------- | --------------------------------- |
+| context         | project and environment discovery |
+| exec sync       | run foreground commands           |
+| exec background | run background jobs               |
+| status          | pool job status                   |
+| setup           | install project dependencies      |
+
 ## Setup
 
 **1. Configure container**
@@ -20,28 +28,19 @@ Update the volume paths to point to your real work.
 The server discovers them dynamically.
 Paths bind-mounted as volumes _can be modified in your machine_ which is what you want for the agent to work for you.
 The example configurations shows how to add read-only paths, for things you don't want to risk, like .git.
+See environment section in docker-compose.yml.
+.env does not affect the containerized application, just local development.
 
 _Linux:_ consider using [rootless docker](https://docs.docker.com/engine/security/rootless)
 
-**1.1. Languages**
-
-It's expected that the language will be versioned using a `.tool-versions` file or similar to each project.
-The container has only bash, python3 and [mise](https://mise.jdx.dev) for language version management.
-Have the agent run the setup tool in the project directory at the start of the session.
-
-**3. Build**
+**2. Build**
 
 ```bash
 go mod tidy
 ./run docker-build
 ```
 
-**3.1. Configuration**
-
-See environment section in docker-compose.yml.
-.env does not affect the containerized application, just local development.
-
-**4. Wire up clients**
+**3. Wire up clients**
 
 For Claude desktop, add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
@@ -69,6 +68,14 @@ _Linux:_ `~/.config/Claude/claude_desktop_config.json`
 ```
 
 Restart client.
+
+**4. Discovery and setup**
+
+To discover projects, the agent can call the context tool.
+It's expected that the language will be versioned using a `.tool-versions` file or similar for each project.
+The container has only bash and python3, for basic scripting.
+[Mise](https://mise.jdx.dev) is provided for language version management.
+Have the agent run the setup tool in the project directory at the start of the session.
 
 ## Logs
 
