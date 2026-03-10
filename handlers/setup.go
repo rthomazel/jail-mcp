@@ -44,16 +44,23 @@ func (h *Handler) HandleSetup(_ context.Context, req mcp.CallToolRequest) (*mcp.
 	result := map[string]any{}
 
 	for _, mountPath := range paths {
+		pathResult := map[string]any{}
+
 		command := buildSetupCommand(mountPath)
 		if command == "" {
-			result[mountPath] = map[string]any{
-				"error": "no supported manifests found; project may use an unsupported language or package manager",
-			}
-			continue
+			pathResult["error"] = "no supported manifests found; project may use an unsupported language or package manager"
+		} else {
+			j := h.startJob(command, mountPath)
+			pathResult["job_id"] = j.id
 		}
 
-		j := h.startJob(command, mountPath)
-		result[mountPath] = map[string]any{"job_id": j.id}
+		if script, err := findSetupScript(mountPath); err == nil {
+			j := h.startJob("bash "+script, filepath.Dir(script))
+			pathResult["setup_script"] = script
+			pathResult["setup_script_job_id"] = j.id
+		}
+
+		result[mountPath] = pathResult
 	}
 
 	b, err := json.Marshal(result)
@@ -76,4 +83,24 @@ func buildSetupCommand(projectPath string) string {
 		return ""
 	}
 	return strings.Join(commands, " && ")
+}
+
+var setupScriptPriority = []string{
+	"setup.sh",
+	"setup",
+	"bin/setup",
+	"script/setup",
+	"scripts/setup",
+	"scripts/setup.sh",
+}
+
+func findSetupScript(projectPath string) (string, error) {
+	for _, candidate := range setupScriptPriority {
+		full := filepath.Join(projectPath, candidate)
+		info, err := os.Stat(full)
+		if err == nil && info.Mode().IsRegular() {
+			return full, nil
+		}
+	}
+	return "", fmt.Errorf("not found")
 }
