@@ -27,17 +27,15 @@ cp docker-compose.sample.yml docker-compose.yml
 Update the volume paths to point to your real work.
 The server discovers them dynamically.
 Paths bind-mounted as volumes _can be modified in your machine_ which is what you want for the agent to work for you.
-The example configurations shows how to add read-only paths, for things you don't want to risk, like .git.
+The example configuration shows how to add read-only paths, for things you don't want to risk, like .git.
 See environment section in docker-compose.yml.
-.env does not affect the containerized application, just local development.
 
 _Linux:_ consider using [rootless docker](https://docs.docker.com/engine/security/rootless)
 
-**2. Build**
+**2. Pull image**
 
 ```bash
-go mod tidy
-./run docker-build
+docker pull ghcr.io/rthomazel/jail-mcp:latest
 ```
 
 **3. Wire up clients**
