@@ -20,6 +20,10 @@ Expose historic command stats to allow planning when to use exec sync or backgro
 
 overwrite sensitive directories and files with blank mounts
 
+## automate image tagging
+
+Add ci workflow to push image to ghcr on tag push
+
 # what not to add
 
 - filesystem MCP tool — redundant, shell already does cat/ls/cp/find
