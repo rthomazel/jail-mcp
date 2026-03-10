@@ -16,8 +16,7 @@ var orderedRules = []struct {
 	command string
 }{
 	{".tool-versions", "mise install"},
-	{"go.mod", "go mod download"},
-	{"tools.go", "go install -tags tools ./..."},
+	{"go.mod", "go mod download && go install tool"},
 	{"yarn.lock", "yarn install"},
 	{"package.json", "npm install"},
 	{"requirements.txt", "pip install -r requirements.txt"},

@@ -40,7 +40,8 @@ when we refactor, minimize renames unless asked for.
 add tests when asked for; look for code that is complex or prone to change/ bugs; if tests never break they add no value.
 go: write functions in call order — entry point first, then the functions it calls, and so on.
 run formatter as last step after making code changes.
-do not pool jobs by yourself, let me request pooling
+do not pool jobs by yourself, let me request pooling.
+this is a jujutsu repo and do not make commits.
 
 ## File access
 
