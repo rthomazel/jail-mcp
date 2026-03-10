@@ -1,6 +1,7 @@
 # this file has example values
 services:
   jail-mcp:
+    build: .
     image: ghcr.io/rthomazel/jail-mcp:latest
     stdin_open: true
     tty: false
