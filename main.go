@@ -59,7 +59,7 @@ func run() error {
 
 	s.AddTool(
 		mcp.NewTool("exec_sync",
-			mcp.WithDescription("Execute a shell command. Returns stdout, stderr, exit code, and duration. Times out after "+cfg.Timeout.String()+". Most agents should use this over exec_background."),
+			mcp.WithDescription("Execute a shell command (fast!). Returns stdout, stderr, exit code, and duration. Times out after "+cfg.Timeout.String()+". Most agents should use this over exec_background."),
 			mcp.WithString("command", mcp.Required(), mcp.Description("Shell command to execute")),
 			mcp.WithString("cwd", mcp.Description("Working directory. Defaults to /")),
 		),
