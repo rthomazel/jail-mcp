@@ -64,12 +64,12 @@ func (h *Handler) HandleSetup(_ context.Context, req mcp.CallToolRequest) (*mcp.
 		switch {
 		case err == nil && manifest != "":
 			// setup language first
-			command = "bash " + manifest + " && " + script
+			command = ". " + script + " && " + manifest
 			pathResult["setup_script"] = script
 		case manifest != "" && err != nil:
 			command = manifest
 		case err == nil:
-			command = "bash " + script
+			command = ". " + script
 			pathResult["setup_script"] = script
 		}
 

@@ -35,7 +35,6 @@ build)
 # -- build docker image tagged jail-mcp with current commit as version
 docker-build)
   docker compose -f docker-compose.yml build --build-arg VERSION="$(git rev-parse --short HEAD)"
-  docker tag jail-mcp ghcr.io/rthomazel/jail-mcp:latest
   ;;
 help | *)
   echo "Usage: ./run <command>"
