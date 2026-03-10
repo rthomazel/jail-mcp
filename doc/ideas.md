@@ -16,26 +16,13 @@ Server would tokenize commands with weights, base command has higher weight, the
 Normalize input.
 Expose historic command stats to allow planning when to use exec sync or background.
 
-## project setup tool
-
-A dedicated `setup` tool that discovers and installs project dependencies for mounted volumes.
-Scans each mounted path for known manifests (`go.mod`+`tools.go`, `package.json`) and runs
-the appropriate install command as a background job per project. Jobs run in series to benefit
-from shared tools across projects. Returns a `{path: job_id}` map. Errors only visible on status poll.
-
-`context` could accept a `run_setup` param (default false) to fire setup jobs and include their
-IDs in the response, for convenience without changing the default behavior.
-
-## language version management
-
-The Dockerfile currently pins language versions, which is a project/user concern.
-The right answer is a version manager (`nvm` for Node, `mise` for polyglot) installed in the
-container. Projects bring `.nvmrc`, `.node-version`, or `.mise.toml` and the setup tool reads them.
-The Dockerfile provides the version manager, not the language version.
-
 ## hidden mounts
 
 overwrite sensitive directories and files with blank mounts
+
+## automate image tagging
+
+Add ci workflow to push image to ghcr on tag push
 
 # what not to add
 
