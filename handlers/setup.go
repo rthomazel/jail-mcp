@@ -28,7 +28,7 @@ var orderedRules = []struct {
 }
 
 // first match only
-var setupScriptPriority = []string{
+var setupScriptCandidates = []string{
 	"setup.sh",
 	"setup",
 	"bin/setup",
@@ -57,18 +57,27 @@ func (h *Handler) HandleSetup(_ context.Context, req mcp.CallToolRequest) (*mcp.
 	for _, mountPath := range paths {
 		pathResult := map[string]any{}
 
-		command := buildSetupCommand(mountPath)
+		manifest := buildManifestCommand(mountPath)
+		script, err := findSetupScript(mountPath)
+
+		var command string
+		switch {
+		case err == nil && manifest != "":
+			// setup language first
+			command = "bash " + manifest + " && " + script
+			pathResult["setup_script"] = script
+		case manifest != "" && err != nil:
+			command = manifest
+		case err == nil:
+			command = "bash " + script
+			pathResult["setup_script"] = script
+		}
+
 		if command == "" {
 			pathResult["error"] = "no supported rule found; project may use an unsupported language or package manager"
 		} else {
 			j := h.startJob(command, mountPath)
 			pathResult["job_id"] = j.id
-		}
-
-		if script, err := findSetupScript(mountPath); err == nil {
-			j := h.startJob("bash "+script, filepath.Dir(script))
-			pathResult["setup_script"] = script
-			pathResult["setup_script_job_id"] = j.id
 		}
 
 		result[mountPath] = pathResult
@@ -82,7 +91,7 @@ func (h *Handler) HandleSetup(_ context.Context, req mcp.CallToolRequest) (*mcp.
 	return mcp.NewToolResultText(string(b)), nil
 }
 
-func buildSetupCommand(projectPath string) string {
+func buildManifestCommand(projectPath string) string {
 	var commands []string
 	for _, rule := range orderedRules {
 		_, statErr := os.Stat(filepath.Join(projectPath, rule.file))
@@ -96,8 +105,10 @@ func buildSetupCommand(projectPath string) string {
 	return strings.Join(commands, " && ")
 }
 
+// findSetupScript checks known candidate paths under projectPath and returns
+// the first regular file found.
 func findSetupScript(projectPath string) (string, error) {
-	for _, candidate := range setupScriptPriority {
+	for _, candidate := range setupScriptCandidates {
 		full := filepath.Join(projectPath, candidate)
 		info, err := os.Stat(full)
 		if err == nil && info.Mode().IsRegular() {
