@@ -42,11 +42,12 @@ go: write functions in call order — entry point first, then the functions it c
 run formatter as last step after making code changes.
 do not pool jobs by yourself, let me request pooling.
 this is a jujutsu repo and do not make commits.
+See files under doc/ for project structure and documentation (faster than reading the source code)
 
 ## File access
 
 All file access goes through `exec_sync` shell commands — not any built-in editor or file tools.
 
-Read:  `cat /projects/foo/bar.go`
+Read: `cat /projects/foo/bar.go`
 Write: `cat > /path/file << 'EOF'\n...\nEOF`
-Edit:  read the file first, then rewrite with `cat >` or use `sed -i`
+Edit: read the file first, then rewrite with `cat >` or use `sed -i`

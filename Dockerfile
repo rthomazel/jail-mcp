@@ -38,7 +38,7 @@ ARG JJ_VERSION=v0.39.0
 RUN ARCH=$(dpkg --print-architecture) && \
     JJ_ARCH=$([ "$ARCH" = "arm64" ] && echo "aarch64" || echo "x86_64") && \
     curl -fsSL "https://github.com/jj-vcs/jj/releases/download/${JJ_VERSION}/jj-${JJ_VERSION}-${JJ_ARCH}-unknown-linux-musl.tar.gz" \
-    | tar -xz -C /usr/local/bin jj && \
+    | tar -xz -C /usr/local/bin ./jj && \
     chmod +x /usr/local/bin/jj
 
 ARG MISE_VERSION=v2026.3.6
