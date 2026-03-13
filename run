@@ -32,9 +32,13 @@ format)
 build)
   go build -o bin/server main.go
   ;;
-# -- build docker image tagged jail-mcp with current commit as version
+# -- bring the http server container UP
+up)
+  docker compose -f docker-compose-http.yml up -d
+  ;;
+# -- build versioned docker image tagged latest
 docker-build)
-  docker compose -f docker-compose.yml build --build-arg VERSION="$(git rev-parse --short HEAD)"
+  docker compose -f docker-compose.yml build --build-arg VERSION="$(git rev-parse --short HEAD):$(date +%Y%m%d:%H%M)"
   ;;
 help | *)
   echo "Usage: ./run <command>"

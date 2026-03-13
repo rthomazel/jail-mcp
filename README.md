@@ -3,7 +3,7 @@
 MCP server providing shell access to clients, jailed in a container.
 
 > **Running outside Docker is dangerous.**
-> The server runs as root in a container that dies at session end.
+> The server runs as root in a container.
 
 | tool            | use case                          |
 | --------------- | --------------------------------- |
@@ -17,17 +17,27 @@ MCP server providing shell access to clients, jailed in a container.
 
 **1. Configure container**
 
-Do not edit `docker-compose.sample.yml`.
-Copy it to `docker-compose.yml` and edit that instead:
+Two sample compose files are provided depending on your client:
+
+| file                             | mode  | use case                     |
+| -------------------------------- | ----- | ---------------------------- |
+| `docker-compose-sample.yml`      | stdio | Claude Desktop, CLI clients  |
+| `docker-compose-http-sample.yml` | HTTP  | Open WebUI, HTTP MCP clients |
+
+Do not edit the sample files. Copy the one you need and edit that instead:
 
 ```bash
-cp docker-compose.sample.yml docker-compose.yml
+# stdio mode (Claude Desktop)
+cp docker-compose-sample.yml docker-compose.yml
+
+# HTTP mode (Open WebUI)
+cp docker-compose-http-sample.yml docker-compose-http.yml
 ```
 
 Update the volume paths to point to your real work.
-The server discovers them dynamically.
+The server discovers them dynamically, `/projects` is a suggestion.
 Paths bind-mounted as volumes _can be modified in your machine_ which is what you want for the agent to work for you.
-The example configuration shows how to add read-only paths, for things you don't want to risk, like .git.
+The example configuration shows how to add read-only paths, i.e `.git`.
 See environment section in docker-compose.yml to add global values to the container.
 
 _Linux:_ consider using [rootless docker](https://docs.docker.com/engine/security/rootless)
@@ -40,7 +50,11 @@ docker pull ghcr.io/rthomazel/jail-mcp:latest
 
 **3. Wire up clients**
 
-For Claude desktop, add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+### Claude Desktop (stdio)
+
+Spawns a fresh container per session via `docker compose run`. The container exits when the session ends.
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 _Linux:_ `~/.config/Claude/claude_desktop_config.json`
 
@@ -66,6 +80,18 @@ _Linux:_ `~/.config/Claude/claude_desktop_config.json`
 ```
 
 Restart client.
+
+### Open WebUI / HTTP clients
+
+Runs a persistent container exposing an HTTP MCP endpoint on port 8001.
+
+```bash
+docker compose -f docker-compose-http.yml up -d
+```
+
+Then add `http://localhost:8001` as a tool server in your client.
+
+The HTTP mode is enabled by setting `JAIL_MCP_HTTP=true` in the container environment, which is pre-configured in `docker-compose-http-sample.yml`.
 
 **4. Discovery and setup**
 

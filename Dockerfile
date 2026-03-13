@@ -52,6 +52,12 @@ ENV MISE_DATA_DIR=/mise
 ENV MISE_CONFIG_DIR=/mise
 ENV PATH="/mise/shims:$PATH"
 
-COPY --from=builder /build/jail-mcp /usr/local/bin/jail-mcp
+RUN pip install mcpo --break-system-packages
 
-CMD ["jail-mcp"]
+COPY --from=builder /build/jail-mcp /usr/local/bin/jail-mcp
+COPY ./bin/jailmcphttp /usr/local/bin/jailmcphttp
+RUN chmod +x /usr/local/bin/jailmcphttp
+
+EXPOSE 8001
+
+CMD ["jailmcphttp"]
