@@ -43,6 +43,7 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		"shell_exec_timeout": h.cfg.Timeout.String(),
 		"projects":           strings.Join(mounts, "\n"),
 		"disk":               gather("df -h / | awk 'NR==2{print $4\" free of \"$2}'"),
+		"version":            h.version,
 		"tools": map[string]string{
 			"bash":    gather("bash --version | head -1 | cut -d' ' -f4"),
 			"git":     gather("git --version | cut -d' ' -f3"),

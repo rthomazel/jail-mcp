@@ -3,5 +3,6 @@ jail-mcp
 _local/*
 prompt.md
 main
-bin/*
+bin/server
 docker-compose.yml
+docker-compose-http.yml

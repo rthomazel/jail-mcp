@@ -1,52 +1,46 @@
 # jail-mcp — agent context
 
-Call `context` tool first. It returns mounted volume paths, available tools, and the log file location.
+Call the `context` tool first. It returns mounted project paths, available tool versions, and timeout.
 
-## Code layout
+Read `doc/` for architecture and project documentation before making changes — it's faster than reading source.
 
+## file access
+
+All file reads and writes go through `exec_sync` shell commands.
+
+```bash
+# read
+cat /projects/foo/bar.go
+
+# write (new file or full rewrite)
+cat > /path/file << 'HEREDOC'
+...
+HEREDOC
+
+# edit
+# read first, then rewrite with cat > or use sed -i
 ```
-main.go                  server wiring, tool registration
-internal/config.go       Config struct (Timeout), env var loading, defaults
-internal/handler.go      HandleContext, HandleExec, runCommand (all in one file)
-```
 
-## Design decisions worth preserving
-
-- No command filtering — container is the security boundary, not the server
-- `bash -c` so the AI gets pipes, redirects, `&&`, subshells
-- `slog.SetDefault` at startup — no logger passed around anywhere
-- Config from env vars only, no flags, no config files
-- `internal/` for everything except `main.go` so `go run main.go` works
-- `image: jail-mcp` in both compose files so builds and runs share the same image tag
-
-## Running commands (agents can't execute the run script directly)
+## running commands
 
 ```bash
 golangci-lint run ./...
-/Users/user/go/bin/godotenv -f .env go run main.go
+godotenv -f .env go run main.go
 go build -o bin/server main.go
-# on linux, docker will be in PATH
-/Applications/Docker.app/Contents/Resources/bin/docker compose -f docker-compose.yml build --build-arg VERSION="$(git rev-parse --short HEAD)"
+# Linux: docker is in PATH; macOS: use full path
+docker compose -f docker-compose.yml build --build-arg VERSION="$(git rev-parse --short HEAD)"
 ```
 
-## Other Guidelines
+## guidelines
 
-go: run go mod tidy after making changes to go.mod and dependencies.
-do not document obvious things
-be more minimalistic: being helpful is good but we need to right answer, avoid guessing or crazy workarounds, if you are blocked, be explicit.
-avoid single letter vars if their scope is not small; go: receivers, loop vars are an exception.
-go: avoid multi line if conditions with samber/lo functions.
-when we refactor, minimize renames unless asked for.
-add tests when asked for; look for code that is complex or prone to change/ bugs; if tests never break they add no value.
-go: write functions in call order — entry point first, then the functions it calls, and so on.
-run formatter as last step after making code changes.
-do not pool jobs by yourself, let me request pooling.
-this is a jujutsu repo and do not make commits.
-
-## File access
-
-All file access goes through `exec_sync` shell commands — not any built-in editor or file tools.
-
-Read:  `cat /projects/foo/bar.go`
-Write: `cat > /path/file << 'EOF'\n...\nEOF`
-Edit:  read the file first, then rewrite with `cat >` or use `sed -i`
+- Run `go mod tidy` after any `go.mod` or dependency changes
+- Run the formatter (`gofumpt`) as the last step after code changes
+- Do not document obvious things
+- Be minimalistic: give the right answer, avoid guessing or workarounds; if blocked, say so explicitly
+- Avoid single-letter variable names unless scope is very small (receivers and loop vars are fine)
+- Avoid multi-line `if` conditions with `samber/lo` functions
+- When refactoring, minimize renames unless asked
+- Add tests only when asked; focus on code that is complex or prone to bugs
+- Write functions in call order — entry point first, then what it calls
+- Do not start background jobs on your own; wait to be asked
+- This is a jujutsu repo — do not make commits

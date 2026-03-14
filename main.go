@@ -12,6 +12,9 @@ import (
 	"github.com/tcodes0/jail-mcp/internal"
 )
 
+// version is set at build time via -ldflags "-X main.version=..."
+var version = "local"
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
@@ -37,13 +40,13 @@ func run() error {
 		}
 	}()
 
-	slog.Info("jail-mcp starting", "timeout", cfg.Timeout, "background_timeout", cfg.BackgroundTimeout)
+	slog.Info("jail-mcp starting", "version", version, "timeout", cfg.Timeout, "background_timeout", cfg.BackgroundTimeout)
 
-	h := handlers.New(cfg)
+	h := handlers.New(cfg, version)
 
 	s := server.NewMCPServer(
 		"jail-mcp",
-		"local",
+		version,
 		server.WithToolCapabilities(false),
 	)
 
@@ -56,7 +59,7 @@ func run() error {
 
 	s.AddTool(
 		mcp.NewTool("exec_sync",
-			mcp.WithDescription("Execute a shell command synchronously. Returns stdout, stderr, exit code, and duration. Times out after "+cfg.Timeout.String()+"."),
+			mcp.WithDescription("Execute a shell command. Returns stdout, stderr, exit code, and duration. Times out after "+cfg.Timeout.String()+". Most agents should load this now and defer exec_background."),
 			mcp.WithString("command", mcp.Required(), mcp.Description("Shell command to execute")),
 			mcp.WithString("cwd", mcp.Description("Working directory. Defaults to /")),
 		),
@@ -65,7 +68,7 @@ func run() error {
 
 	s.AddTool(
 		mcp.NewTool("exec_background",
-			mcp.WithDescription("Execute a long-running shell command in the background. Returns a job_id immediately. Use exec_status to poll for results. Times out after "+cfg.BackgroundTimeout.String()+"."),
+			mcp.WithDescription("Execute a very long-running shell command in the background. Returns a job_id immediately. Use exec_status to poll for results. Times out after "+cfg.BackgroundTimeout.String()+"."),
 			mcp.WithString("command", mcp.Required(), mcp.Description("Shell command to execute")),
 			mcp.WithString("cwd", mcp.Description("Working directory. Defaults to /")),
 		),

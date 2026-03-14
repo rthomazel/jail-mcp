@@ -6,44 +6,44 @@
 
 set -euo pipefail
 shopt -s globstar
-trap 'err $LINENO' ERR
-
-err() {
-  echo "error: line $1" >&2
-}
+trap 'echo fatal: $0:$LINENO >&2' ERR
 
 # AGENTS: run commands directly, you cannot execute this file. if making changes to this file, run chmod u+x on it.
 cmd="${1:-help}"
 
 case "$cmd" in
-  # -- run golangci-lint
-  lint)
-    golangci-lint run ./...
-    ;;
-  # -- start the server with godotenv
-  dev)
-    "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go run main.go
-    ;;
-  # -- run tests
-  test)
-    "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go test -race ./...
-    ;;
-  # -- run gofumpt formatter
-  format)
-    gofumpt -l -w .
-    ;;
-  # -- build local binary to bin/server
-  build)
-    go build -o bin/server main.go
-    ;;
-  # -- build docker image tagged jail-mcp with current commit as version
-  docker-build)
-    docker compose -f docker-compose.yml build --build-arg VERSION="$(git rev-parse --short HEAD)"
-    ;;
-  help|*)
-    echo "Usage: ./run <command>"
-    echo ""
-    echo "Commands:"
-    awk '/^  # -- /{desc=substr($0, index($0,"-- ")+3)} /\)$/ && desc{cmd=$0; gsub(/[[:space:]()|*]/, "", cmd); printf "  %-20s %s\n", cmd, desc; desc=""}' "$0"
-    ;;
+# -- run golangci-lint
+lint)
+  golangci-lint run ./...
+  ;;
+# -- start the server with godotenv
+dev)
+  "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go run main.go
+  ;;
+# -- run tests
+test)
+  "${GOPATH:-$HOME/go}/bin/godotenv" -f .env go test -race ./...
+  ;;
+# -- run gofumpt formatter
+format)
+  gofumpt -l -w .
+  ;;
+# -- build local binary to bin/server
+build)
+  go build -o bin/server main.go
+  ;;
+# -- bring the http server container UP
+up)
+  docker compose -f docker-compose-http.yml up -d
+  ;;
+# -- build versioned docker image tagged latest
+docker-build)
+  docker compose -f docker-compose.yml build --build-arg VERSION="$(git rev-parse --short HEAD):$(date +%Y%m%d:%H%M)"
+  ;;
+help | *)
+  echo "Usage: ./run <command>"
+  echo ""
+  echo "Commands:"
+  awk '/^# -- /{desc=substr($0, index($0,"-- ")+3)} /\)$/ && desc{cmd=$0; gsub(/[[:space:]()|*]/, "", cmd); printf "  %-20s %s\n", cmd, desc; desc=""}' "$0"
+  ;;
 esac

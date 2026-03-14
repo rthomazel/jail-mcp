@@ -11,6 +11,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
+// any file that matches will start a setup command
 var orderedRules = []struct {
 	file    string
 	command string
@@ -24,6 +25,16 @@ var orderedRules = []struct {
 	{"Gemfile", "bundle install"},
 	{"Cargo.toml", "cargo fetch"},
 	{"mix.exs", "mix deps.get"},
+}
+
+// first match only
+var setupScriptCandidates = []string{
+	"setup.sh",
+	"setup",
+	"bin/setup",
+	"script/setup",
+	"scripts/setup",
+	"scripts/setup.sh",
 }
 
 func (h *Handler) HandleSetup(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -44,16 +55,32 @@ func (h *Handler) HandleSetup(_ context.Context, req mcp.CallToolRequest) (*mcp.
 	result := map[string]any{}
 
 	for _, mountPath := range paths {
-		command := buildSetupCommand(mountPath)
-		if command == "" {
-			result[mountPath] = map[string]any{
-				"error": "no supported manifests found; project may use an unsupported language or package manager",
-			}
-			continue
+		pathResult := map[string]any{}
+
+		manifest := buildManifestCommand(mountPath)
+		script, err := findSetupScript(mountPath)
+
+		var command string
+		switch {
+		case err == nil && manifest != "":
+			// setup language first
+			command = ". " + script + " && " + manifest
+			pathResult["setup_script"] = script
+		case manifest != "" && err != nil:
+			command = manifest
+		case err == nil:
+			command = ". " + script
+			pathResult["setup_script"] = script
 		}
 
-		j := h.startJob(command, mountPath)
-		result[mountPath] = map[string]any{"job_id": j.id}
+		if command == "" {
+			pathResult["error"] = "no supported rule found; project may use an unsupported language or package manager"
+		} else {
+			j := h.startJob(command, mountPath)
+			pathResult["job_id"] = j.id
+		}
+
+		result[mountPath] = pathResult
 	}
 
 	b, err := json.Marshal(result)
@@ -64,7 +91,7 @@ func (h *Handler) HandleSetup(_ context.Context, req mcp.CallToolRequest) (*mcp.
 	return mcp.NewToolResultText(string(b)), nil
 }
 
-func buildSetupCommand(projectPath string) string {
+func buildManifestCommand(projectPath string) string {
 	var commands []string
 	for _, rule := range orderedRules {
 		_, statErr := os.Stat(filepath.Join(projectPath, rule.file))
@@ -76,4 +103,17 @@ func buildSetupCommand(projectPath string) string {
 		return ""
 	}
 	return strings.Join(commands, " && ")
+}
+
+// findSetupScript checks known candidate paths under projectPath and returns
+// the first regular file found.
+func findSetupScript(projectPath string) (string, error) {
+	for _, candidate := range setupScriptCandidates {
+		full := filepath.Join(projectPath, candidate)
+		info, err := os.Stat(full)
+		if err == nil && info.Mode().IsRegular() {
+			return full, nil
+		}
+	}
+	return "", fmt.Errorf("not found")
 }
