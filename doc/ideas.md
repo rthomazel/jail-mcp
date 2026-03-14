@@ -20,9 +20,10 @@ Expose historic command stats to allow planning when to use exec sync or backgro
 
 overwrite sensitive directories and files with blank mounts
 
-## automate image tagging
+## enhance docs with agent guidance
 
-Add ci workflow to push image to ghcr on tag push
+add to docs prompts and tips to get agents to use jail mcp tools more effectively
+add docs on how to obtain project files (probably clone the repo) or package in some way
 
 # what not to add
 
