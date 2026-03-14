@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## [0.2.1](https://github.com/rthomazel/jail-mcp/pull/4) feat: http mode & runtime improvements
+
+### features
+
+- **http mode** — new optional HTTP/SSE transport alongside stdio. `bin/jailmcphttp` helper script and `docker-compose-http-sample.yml` added for running the server over HTTP.
+- **jujutsu in container** — `jj` binary installed in the runtime image, enabling agents to use jj commands inside the container.
+- **setup script support** — `setup` tool now discovers and sources a `setup.sh` (or equivalent at `setup`, `bin/setup`, `script/setup`, `scripts/setup`, `scripts/setup.sh`) before running manifest install commands.
+- **version in context** — `context` tool now returns the server build version.
+
+### fixes
+
+- **dockerfile** — fixed jj archive extraction (member path is `./jj`, requires `--strip-components=1`).
+- **setup race** — fixed a race condition between concurrent setup jobs sharing output buffers.
+- **setup tag & command** — corrected `go install tool` invocation and run script image tagging.
+
+### improvements
+
+- **tool descriptions** — updated `exec_sync` and `exec_background` descriptions to better guide agents on when to use each.
+- **CI** — added `release.yml` workflow to push the image to `ghcr.io` on tag push.
+- **compose sample** — renamed `docker-compose.sample.yml` → `docker-compose-sample.yml` for consistency; updated to reference the locally built image.
+- **docs** — added `doc/architecture.md`, `doc/config.md`; updated `CLAUDE.md` to be agent-directives-only.
+
+
 ## [0.2.0](https://github.com/rthomazel/jail-mcp/pull/3) feat(handlers): setup
 
 ### features
