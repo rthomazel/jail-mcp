@@ -47,11 +47,12 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		"tools": map[string]string{
 			"bash":    gather("bash --version | head -1 | cut -d' ' -f4"),
 			"git":     gather("git --version | cut -d' ' -f3"),
-			"go":      gather("go version | cut -d' ' -f3"),
+			"jujutsu": gather("jj version"),
+			"mise":    gather("mise v 2>/dev/null | tail -1"),
 			"python3": gather("python3 --version | cut -d' ' -f2"),
-			"node":    gather("node --version"),
 			"make":    gather("make --version | head -1 | cut -d' ' -f3"),
 			"jq":      gather("jq --version"),
+			"curl":    gather("curl --version | head -1"),
 		},
 	}
 
