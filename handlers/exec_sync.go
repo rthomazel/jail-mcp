@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -43,15 +44,15 @@ func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp
 }
 
 func formatPlainText(r *commandResult) string {
-	var b strings.Builder
+	b := strings.Builder{}
 
-	fmt.Fprintf(&b, "<metadata>\n")
-	fmt.Fprintf(&b, "exit: %d\n", r.ExitCode)
-	fmt.Fprintf(&b, "duration: %s\n", r.Duration)
-	fmt.Fprintf(&b, "</metadata>\n")
+	b.WriteString("<metadata>\n")
+	b.WriteString("exit: " + strconv.Itoa(r.ExitCode) + "\n")
+	b.WriteString("duration: " + r.Duration + "\n")
+	b.WriteString("</metadata>\n")
 
-	fmt.Fprintf(&b, "\n<stdout>\n%s\n</stdout>\n", r.Stdout)
-	fmt.Fprintf(&b, "\n<stderr>\n%s\n</stderr>\n", r.Stderr)
+	b.WriteString("\n<stdout>\n" + r.Stdout + "\n</stdout>\n")
+	b.WriteString("\n<stderr>\n" + r.Stderr + "\n</stderr>\n")
 
 	return b.String()
 }

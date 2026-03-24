@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -23,10 +22,10 @@ func (h *Handler) HandleExecBackground(_ context.Context, req mcp.CallToolReques
 
 	j := h.startJob(command, cwd)
 
-	var b strings.Builder
-	fmt.Fprintf(&b, "<metadata>\n")
-	fmt.Fprintf(&b, "job_id: %s\n", j.id)
-	fmt.Fprintf(&b, "</metadata>\n")
+	b := strings.Builder{}
+	b.WriteString("<metadata>\n")
+	b.WriteString("job_id: " + j.id + "\n")
+	b.WriteString("</metadata>\n")
 
 	return mcp.NewToolResultText(b.String()), nil
 }

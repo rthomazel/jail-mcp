@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,25 +27,25 @@ func (h *Handler) HandleStatus(_ context.Context, req mcp.CallToolRequest) (*mcp
 	j.mu.Lock()
 	defer j.mu.Unlock()
 
-	var b strings.Builder
+	b := strings.Builder{}
 
-	fmt.Fprintf(&b, "<metadata>\n")
-	fmt.Fprintf(&b, "job_id: %s\n", j.id)
-	fmt.Fprintf(&b, "done: %t\n", j.done)
+	b.WriteString("<metadata>\n")
+	b.WriteString("job_id: " + j.id + "\n")
+	b.WriteString("done: " + strconv.FormatBool(j.done) + "\n")
 	if j.done {
-		fmt.Fprintf(&b, "exit: %d\n", j.exitCode)
+		b.WriteString("exit: " + strconv.Itoa(j.exitCode) + "\n")
 	}
-	fmt.Fprintf(&b, "duration: %s\n", time.Since(j.started).Round(time.Millisecond))
+	b.WriteString("duration: " + time.Since(j.started).Round(time.Millisecond).String() + "\n")
 	if j.err != "" {
-		fmt.Fprintf(&b, "error: %s\n", j.err)
+		b.WriteString("error: " + j.err + "\n")
 	}
-	fmt.Fprintf(&b, "</metadata>\n")
+	b.WriteString("</metadata>\n")
 
 	stdout := strings.TrimRight(j.stdout.String(), "\n")
 	stderr := strings.TrimRight(j.stderr.String(), "\n")
 
-	fmt.Fprintf(&b, "\n<stdout>\n%s\n</stdout>\n", stdout)
-	fmt.Fprintf(&b, "\n<stderr>\n%s\n</stderr>\n", stderr)
+	b.WriteString("\n<stdout>\n" + stdout + "\n</stdout>\n")
+	b.WriteString("\n<stderr>\n" + stderr + "\n</stderr>\n")
 
 	return mcp.NewToolResultText(b.String()), nil
 }

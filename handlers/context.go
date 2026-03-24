@@ -68,22 +68,22 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 }
 
 func formatPlainTextContext(osName, arch, disk, path, timeout, version string, projects []string, tools map[string]string) string {
-	var b strings.Builder
+	b := strings.Builder{}
 
-	fmt.Fprintf(&b, "<metadata>\n")
-	fmt.Fprintf(&b, "os: %s\n", osName)
-	fmt.Fprintf(&b, "arch: %s\n", arch)
-	fmt.Fprintf(&b, "disk: %s\n", disk)
-	fmt.Fprintf(&b, "path: %s\n", path)
-	fmt.Fprintf(&b, "shell_exec_timeout: %s\n", timeout)
-	fmt.Fprintf(&b, "version: %s\n", version)
+	b.WriteString("<metadata>\n")
+	b.WriteString("os: " + osName + "\n")
+	b.WriteString("arch: " + arch + "\n")
+	b.WriteString("disk: " + disk + "\n")
+	b.WriteString("path: " + path + "\n")
+	b.WriteString("shell_exec_timeout: " + timeout + "\n")
+	b.WriteString("version: " + version + "\n")
 
-	fmt.Fprintf(&b, "projects:\n")
+	b.WriteString("projects:\n")
 	for _, p := range projects {
-		fmt.Fprintf(&b, "  %s\n", p)
+		b.WriteString("  " + p + "\n")
 	}
 
-	fmt.Fprintf(&b, "tools:\n")
+	b.WriteString("tools:\n")
 	maxLen := 0
 	for _, name := range toolNames {
 		if len(name) > maxLen {
@@ -91,10 +91,10 @@ func formatPlainTextContext(osName, arch, disk, path, timeout, version string, p
 		}
 	}
 	for _, name := range toolNames {
-		fmt.Fprintf(&b, "  %-*s %s\n", maxLen+1, name+":", tools[name])
+		b.WriteString("  " + fmt.Sprintf("%-*s", maxLen+1, name+":") + " " + tools[name] + "\n")
 	}
 
-	fmt.Fprintf(&b, "</metadata>\n")
+	b.WriteString("</metadata>\n")
 
 	return b.String()
 }

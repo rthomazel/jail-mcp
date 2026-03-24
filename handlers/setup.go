@@ -51,19 +51,18 @@ func (h *Handler) HandleSetup(_ context.Context, req mcp.CallToolRequest) (*mcp.
 		paths = append(paths, str)
 	}
 
-	var b strings.Builder
+	b := strings.Builder{}
+	b.WriteString("<metadata>\n")
 
-	fmt.Fprintf(&b, "<metadata>\n")
 	for i, mountPath := range paths {
 		if i > 0 {
-			fmt.Fprintf(&b, "\n")
+			b.WriteString("\n")
 		}
 
 		manifest := buildManifestCommand(mountPath)
 		script, err := findSetupScript(mountPath)
 
-		var command string
-		var setupScript string
+		var command, setupScript string
 		switch {
 		case err == nil && manifest != "":
 			command = ". " + script + " && " + manifest
@@ -75,18 +74,19 @@ func (h *Handler) HandleSetup(_ context.Context, req mcp.CallToolRequest) (*mcp.
 			setupScript = script
 		}
 
-		fmt.Fprintf(&b, "%s:\n", mountPath)
+		b.WriteString(mountPath + ":\n")
 		if command == "" {
-			fmt.Fprintf(&b, "  error: no supported rule found; project may use an unsupported language or package manager\n")
+			b.WriteString("  error: no supported rule found; project may use an unsupported language or package manager\n")
 		} else {
 			j := h.startJob(command, mountPath)
-			fmt.Fprintf(&b, "  job_id: %s\n", j.id)
+			b.WriteString("  job_id: " + j.id + "\n")
 			if setupScript != "" {
-				fmt.Fprintf(&b, "  setup_script: %s\n", setupScript)
+				b.WriteString("  setup_script: " + setupScript + "\n")
 			}
 		}
 	}
-	fmt.Fprintf(&b, "</metadata>\n")
+
+	b.WriteString("</metadata>\n")
 
 	return mcp.NewToolResultText(b.String()), nil
 }
