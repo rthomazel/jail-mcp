@@ -15,7 +15,11 @@ services:
     volumes:
       # projects
       - /Users/you/helloworld:/projects/helloworld
-      # :ro adds a path as read-only, must be after parent path
+      # :ro adds a path as read-only, must come after the parent path
       #- /Users/you/helloworld/.git:/projects/helloworld/.git:ro
       - /Users/you/fizzbuzz:/projects/fizzbuzz
       #- /Users/you/fizzbuzz/.git:/projects/fizzbuzz/.git:ro
+      # hide a file from the agent (mount /dev/null over it)
+      #- /dev/null:/projects/helloworld/.env
+      # hide a directory from the agent (mount an empty dir over it, must exist on host)
+      #- /tmp/jail-hidden:/projects/helloworld/secrets

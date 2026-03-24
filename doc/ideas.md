@@ -16,17 +16,7 @@ Server would tokenize commands with weights, base command has higher weight, the
 Normalize input.
 Expose historic command stats to allow planning when to use exec sync or background.
 
-## hidden mounts
-
-Overwrite sensitive directories and files with blank mounts
-
-## enhance docs with agent guidance
-
-Add to docs prompts and tips to get agents to use jail mcp tools more effectively
-Add docs on how to obtain project files (probably clone the repo) or package in some way
-
 # what not to add
 
 - filesystem MCP tool — redundant, shell already does cat/ls/cp/find
 - command allowlists — defeats the purpose, Docker is the boundary
-- http/sse transport — only needed if running the server persistently and remotely
