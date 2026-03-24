@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -19,7 +20,13 @@ var (
 	skipPrefixes = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
 )
 
-var toolNames = []string{"bash", "git", "jujutsu", "mise", "python3", "make", "jq", "curl"}
+const miseShimsDir = "/mise/shims"
+
+var toolNames = []string{
+	"bash", "git", "jujutsu", "mise",
+	"python3", "pip3",
+	"rg", "make", "jq", "curl",
+}
 
 var toolCommands = map[string]string{
 	"bash":    "bash --version | head -1 | cut -d' ' -f4",
@@ -27,6 +34,8 @@ var toolCommands = map[string]string{
 	"jujutsu": "jj version",
 	"mise":    "mise v 2>/dev/null | tail -1",
 	"python3": "python3 --version | cut -d' ' -f2",
+	"pip3":    "pip3 --version 2>/dev/null | cut -d' ' -f2",
+	"rg":      "rg --version | head -1 | cut -d' ' -f2",
 	"make":    "make --version | head -1 | cut -d' ' -f3",
 	"jq":      "jq --version",
 	"curl":    "curl --version | head -1",
@@ -64,10 +73,43 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		tools[name] = v
 	}
 
-	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, path, h.cfg.Timeout.String(), h.version, mounts, tools)), nil
+	miseShims := discoverMiseShims()
+
+	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, path, h.cfg.Timeout.String(), h.version, mounts, tools, miseShims)), nil
 }
 
-func formatPlainTextContext(osName, arch, disk, path, timeout, version string, projects []string, tools map[string]string) string {
+// discoverMiseShims returns executable filenames in miseShimsDir, sorted, skipping
+// non-executable files and wrapper scripts (.cmd, .js).
+func discoverMiseShims() []string {
+	entries, err := os.ReadDir(miseShimsDir)
+	if err != nil {
+		return nil
+	}
+
+	var shims []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.Contains(name, ".") {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		if info.Mode()&0o111 == 0 {
+			continue
+		}
+		shims = append(shims, filepath.Base(name))
+	}
+
+	sort.Strings(shims)
+	return shims
+}
+
+func formatPlainTextContext(osName, arch, disk, path, timeout, version string, projects []string, tools map[string]string, miseShims []string) string {
 	b := strings.Builder{}
 
 	b.WriteString("<metadata>\n")
@@ -92,6 +134,13 @@ func formatPlainTextContext(osName, arch, disk, path, timeout, version string, p
 	}
 	for _, name := range toolNames {
 		b.WriteString("  " + fmt.Sprintf("%-*s", maxLen+1, name+":") + " " + tools[name] + "\n")
+	}
+
+	if len(miseShims) > 0 {
+		b.WriteString("mise shims:\n")
+		for _, s := range miseShims {
+			b.WriteString("  " + s + "\n")
+		}
 	}
 
 	b.WriteString("</metadata>\n")

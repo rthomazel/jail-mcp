@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"runtime/debug"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -25,8 +26,10 @@ func main() {
 }
 
 func run() error {
-	// expose mise shims to exec tools
-	_ = os.Setenv("PATH", miseShims+":"+os.Getenv("PATH"))
+	current := os.Getenv("PATH")
+	if !strings.Contains(current, miseShims) {
+		_ = os.Setenv("PATH", miseShims+":"+current)
+	}
 
 	cfg, err := internal.LoadConfig()
 	if err != nil {
