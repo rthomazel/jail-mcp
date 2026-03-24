@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os/exec"
@@ -15,10 +14,10 @@ import (
 )
 
 type commandResult struct {
-	Stdout   string `json:"stdout"`
-	Stderr   string `json:"stderr"`
-	ExitCode int    `json:"exit_code"`
-	Duration string `json:"duration"`
+	Stdout   string
+	Stderr   string
+	ExitCode int
+	Duration string
 	err      string
 }
 
@@ -40,12 +39,21 @@ func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp
 		return mcp.NewToolResultError(result.err), nil
 	}
 
-	b, err := json.Marshal(result)
-	if err != nil {
-		return mcp.NewToolResultError("failed to encode result"), nil
-	}
+	return mcp.NewToolResultText(formatPlainText(result)), nil
+}
 
-	return mcp.NewToolResultText(string(b)), nil
+func formatPlainText(r *commandResult) string {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "<metadata>\n")
+	fmt.Fprintf(&b, "exit: %d\n", r.ExitCode)
+	fmt.Fprintf(&b, "duration: %s\n", r.Duration)
+	fmt.Fprintf(&b, "</metadata>\n")
+
+	fmt.Fprintf(&b, "\n<stdout>\n%s\n</stdout>\n", r.Stdout)
+	fmt.Fprintf(&b, "\n<stderr>\n%s\n</stderr>\n", r.Stderr)
+
+	return b.String()
 }
 
 func runCommand(ctx context.Context, cfg *internal.Config, command, cwd string) *commandResult {

@@ -3,7 +3,7 @@ package handlers
 import (
 	"bufio"
 	"context"
-	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -19,11 +19,28 @@ var (
 	skipPrefixes = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
 )
 
+var toolNames = []string{"bash", "git", "jujutsu", "mise", "python3", "make", "jq", "curl"}
+
+var toolCommands = map[string]string{
+	"bash":    "bash --version | head -1 | cut -d' ' -f4",
+	"git":     "git --version | cut -d' ' -f3",
+	"jujutsu": "jj version",
+	"mise":    "mise v 2>/dev/null | tail -1",
+	"python3": "python3 --version | cut -d' ' -f2",
+	"make":    "make --version | head -1 | cut -d' ' -f3",
+	"jq":      "jq --version",
+	"curl":    "curl --version | head -1",
+}
+
 func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	gather := func(cmd string) string {
 		r := runCommand(ctx, h.cfg, cmd, "/")
 		return strings.TrimSpace(r.Stdout)
 	}
+
+	osName := gather("cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"'")
+	arch := gather("uname -m")
+	disk := gather("df -h / | awk 'NR==2{print $4\" free of \"$2}'")
 
 	var mounts []string
 	file, err := os.Open("/proc/mounts")
@@ -37,31 +54,48 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		}
 	}
 
-	info := map[string]any{
-		"os":                 gather("cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"'"),
-		"arch":               gather("uname -m"),
-		"shell_exec_timeout": h.cfg.Timeout.String(),
-		"projects":           strings.Join(mounts, "\n"),
-		"disk":               gather("df -h / | awk 'NR==2{print $4\" free of \"$2}'"),
-		"version":            h.version,
-		"tools": map[string]string{
-			"bash":    gather("bash --version | head -1 | cut -d' ' -f4"),
-			"git":     gather("git --version | cut -d' ' -f3"),
-			"jujutsu": gather("jj version"),
-			"mise":    gather("mise v 2>/dev/null | tail -1"),
-			"python3": gather("python3 --version | cut -d' ' -f2"),
-			"make":    gather("make --version | head -1 | cut -d' ' -f3"),
-			"jq":      gather("jq --version"),
-			"curl":    gather("curl --version | head -1"),
-		},
+	tools := make(map[string]string, len(toolNames))
+	for _, name := range toolNames {
+		v := gather(toolCommands[name])
+		if v == "" {
+			v = "-"
+		}
+		tools[name] = v
 	}
 
-	b, err := json.Marshal(info)
-	if err != nil {
-		return mcp.NewToolResultError("failed to encode context"), nil
+	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, h.cfg.Timeout.String(), h.version, mounts, tools)), nil
+}
+
+func formatPlainTextContext(osName, arch, disk, timeout, version string, projects []string, tools map[string]string) string {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "<metadata>\n")
+	fmt.Fprintf(&b, "os: %s\n", osName)
+	fmt.Fprintf(&b, "arch: %s\n", arch)
+	fmt.Fprintf(&b, "disk: %s\n", disk)
+	fmt.Fprintf(&b, "shell_exec_timeout: %s\n", timeout)
+	fmt.Fprintf(&b, "version: %s\n", version)
+
+	fmt.Fprintf(&b, "projects:\n")
+	for _, p := range projects {
+		fmt.Fprintf(&b, "  %s\n", p)
 	}
 
-	return mcp.NewToolResultText(string(b)), nil
+	fmt.Fprintf(&b, "tools:\n")
+	// measure longest name for alignment
+	maxLen := 0
+	for _, name := range toolNames {
+		if len(name) > maxLen {
+			maxLen = len(name)
+		}
+	}
+	for _, name := range toolNames {
+		fmt.Fprintf(&b, "  %-*s %s\n", maxLen+1, name+":", tools[name])
+	}
+
+	fmt.Fprintf(&b, "</metadata>\n")
+
+	return b.String()
 }
 
 func parseMounts(r io.Reader) ([]string, error) {

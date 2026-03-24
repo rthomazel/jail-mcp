@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -52,43 +51,44 @@ func (h *Handler) HandleSetup(_ context.Context, req mcp.CallToolRequest) (*mcp.
 		paths = append(paths, str)
 	}
 
-	result := map[string]any{}
+	var b strings.Builder
 
-	for _, mountPath := range paths {
-		pathResult := map[string]any{}
+	fmt.Fprintf(&b, "<metadata>\n")
+	for i, mountPath := range paths {
+		if i > 0 {
+			fmt.Fprintf(&b, "\n")
+		}
 
 		manifest := buildManifestCommand(mountPath)
 		script, err := findSetupScript(mountPath)
 
 		var command string
+		var setupScript string
 		switch {
 		case err == nil && manifest != "":
-			// setup language first
 			command = ". " + script + " && " + manifest
-			pathResult["setup_script"] = script
+			setupScript = script
 		case manifest != "" && err != nil:
 			command = manifest
 		case err == nil:
 			command = ". " + script
-			pathResult["setup_script"] = script
+			setupScript = script
 		}
 
+		fmt.Fprintf(&b, "%s:\n", mountPath)
 		if command == "" {
-			pathResult["error"] = "no supported rule found; project may use an unsupported language or package manager"
+			fmt.Fprintf(&b, "  error: no supported rule found; project may use an unsupported language or package manager\n")
 		} else {
 			j := h.startJob(command, mountPath)
-			pathResult["job_id"] = j.id
+			fmt.Fprintf(&b, "  job_id: %s\n", j.id)
+			if setupScript != "" {
+				fmt.Fprintf(&b, "  setup_script: %s\n", setupScript)
+			}
 		}
-
-		result[mountPath] = pathResult
 	}
+	fmt.Fprintf(&b, "</metadata>\n")
 
-	b, err := json.Marshal(result)
-	if err != nil {
-		return mcp.NewToolResultError("failed to encode result"), nil
-	}
-
-	return mcp.NewToolResultText(string(b)), nil
+	return mcp.NewToolResultText(b.String()), nil
 }
 
 func buildManifestCommand(projectPath string) string {

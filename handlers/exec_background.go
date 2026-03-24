@@ -2,7 +2,8 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 )
@@ -22,10 +23,10 @@ func (h *Handler) HandleExecBackground(_ context.Context, req mcp.CallToolReques
 
 	j := h.startJob(command, cwd)
 
-	b, err := json.Marshal(map[string]any{"job_id": j.id})
-	if err != nil {
-		return mcp.NewToolResultError("failed to encode result"), nil
-	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "<metadata>\n")
+	fmt.Fprintf(&b, "job_id: %s\n", j.id)
+	fmt.Fprintf(&b, "</metadata>\n")
 
-	return mcp.NewToolResultText(string(b)), nil
+	return mcp.NewToolResultText(b.String()), nil
 }

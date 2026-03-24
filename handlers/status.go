@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -27,24 +26,25 @@ func (h *Handler) HandleStatus(_ context.Context, req mcp.CallToolRequest) (*mcp
 	j.mu.Lock()
 	defer j.mu.Unlock()
 
-	resp := map[string]any{
-		"job_id":   j.id,
-		"done":     j.done,
-		"stdout":   strings.TrimRight(j.stdout.String(), "\n"),
-		"stderr":   strings.TrimRight(j.stderr.String(), "\n"),
-		"duration": time.Since(j.started).Round(time.Millisecond).String(),
-	}
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "<metadata>\n")
+	fmt.Fprintf(&b, "job_id: %s\n", j.id)
+	fmt.Fprintf(&b, "done: %t\n", j.done)
 	if j.done {
-		resp["exit_code"] = j.exitCode
+		fmt.Fprintf(&b, "exit: %d\n", j.exitCode)
 	}
+	fmt.Fprintf(&b, "duration: %s\n", time.Since(j.started).Round(time.Millisecond))
 	if j.err != "" {
-		resp["error"] = j.err
+		fmt.Fprintf(&b, "error: %s\n", j.err)
 	}
+	fmt.Fprintf(&b, "</metadata>\n")
 
-	b, err := json.Marshal(resp)
-	if err != nil {
-		return mcp.NewToolResultError("failed to encode result"), nil
-	}
+	stdout := strings.TrimRight(j.stdout.String(), "\n")
+	stderr := strings.TrimRight(j.stderr.String(), "\n")
 
-	return mcp.NewToolResultText(string(b)), nil
+	fmt.Fprintf(&b, "\n<stdout>\n%s\n</stdout>\n", stdout)
+	fmt.Fprintf(&b, "\n<stderr>\n%s\n</stderr>\n", stderr)
+
+	return mcp.NewToolResultText(b.String()), nil
 }
