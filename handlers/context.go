@@ -41,6 +41,7 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 	osName := gather("cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"'")
 	arch := gather("uname -m")
 	disk := gather("df -h / | awk 'NR==2{print $4\" free of \"$2}'")
+	path := os.Getenv("PATH")
 
 	var mounts []string
 	file, err := os.Open("/proc/mounts")
@@ -63,16 +64,17 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		tools[name] = v
 	}
 
-	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, h.cfg.Timeout.String(), h.version, mounts, tools)), nil
+	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, path, h.cfg.Timeout.String(), h.version, mounts, tools)), nil
 }
 
-func formatPlainTextContext(osName, arch, disk, timeout, version string, projects []string, tools map[string]string) string {
+func formatPlainTextContext(osName, arch, disk, path, timeout, version string, projects []string, tools map[string]string) string {
 	var b strings.Builder
 
 	fmt.Fprintf(&b, "<metadata>\n")
 	fmt.Fprintf(&b, "os: %s\n", osName)
 	fmt.Fprintf(&b, "arch: %s\n", arch)
 	fmt.Fprintf(&b, "disk: %s\n", disk)
+	fmt.Fprintf(&b, "path: %s\n", path)
 	fmt.Fprintf(&b, "shell_exec_timeout: %s\n", timeout)
 	fmt.Fprintf(&b, "version: %s\n", version)
 
@@ -82,7 +84,6 @@ func formatPlainTextContext(osName, arch, disk, timeout, version string, project
 	}
 
 	fmt.Fprintf(&b, "tools:\n")
-	// measure longest name for alignment
 	maxLen := 0
 	for _, name := range toolNames {
 		if len(name) > maxLen {

@@ -12,6 +12,8 @@ import (
 	"github.com/tcodes0/jail-mcp/internal"
 )
 
+const miseShims = "/mise/shims"
+
 // version is set at build time via -ldflags "-X main.version=..."
 var version = "local"
 
@@ -23,6 +25,9 @@ func main() {
 }
 
 func run() error {
+	// expose mise shims to exec tools
+	_ = os.Setenv("PATH", miseShims+":"+os.Getenv("PATH"))
+
 	cfg, err := internal.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("config: %w", err)
