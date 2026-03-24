@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tcodes0/jail-mcp/internal"
+	"github.com/rthomazel/jail-mcp/internal"
 )
 
 type job struct {

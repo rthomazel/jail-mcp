@@ -9,8 +9,8 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"github.com/tcodes0/jail-mcp/handlers"
-	"github.com/tcodes0/jail-mcp/internal"
+	"github.com/rthomazel/jail-mcp/handlers"
+	"github.com/rthomazel/jail-mcp/internal"
 )
 
 const miseShims = "/mise/shims"

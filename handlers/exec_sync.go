@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/tcodes0/jail-mcp/internal"
+	"github.com/rthomazel/jail-mcp/internal"
 )
 
 type commandResult struct {
