@@ -1,35 +1,7 @@
 # jail-mcp — agent context
 
-Call the `context` tool first. It returns mounted project paths, available tool versions, and timeout.
+Read `doc/` .md files for architecture and project documentation before making changes — it's faster than reading source.
 
-Read `doc/` for architecture and project documentation before making changes — it's faster than reading source.
-
-## file access
-
-All file reads and writes go through `exec_sync` shell commands.
-
-```bash
-# read
-cat /projects/foo/bar.go
-
-# write (new file or full rewrite)
-cat > /path/file << 'HEREDOC'
-...
-HEREDOC
-
-# edit
-# read first, then rewrite with cat > or use sed -i
-```
-
-## running commands
-
-```bash
-golangci-lint run ./...
-godotenv -f .env go run main.go
-go build -o bin/server main.go
-# Linux: docker is in PATH; macOS: use full path
-docker compose -f docker-compose.yml build --build-arg VERSION="$(git rev-parse --short HEAD)"
-```
 
 ## guidelines
 

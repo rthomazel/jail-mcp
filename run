@@ -38,7 +38,7 @@ up)
   ;;
 # -- build versioned docker image tagged latest
 docker-build)
-  docker compose -f docker-compose.yml build --build-arg VERSION="$(git rev-parse --short HEAD):$(date +%Y%m%d:%H%M)"
+  docker compose -f docker-compose.yml build --build-arg VERSION="$(git describe --tags --abbrev=0) ($(git rev-parse --short HEAD))"
   ;;
 help | *)
   echo "Usage: ./run <command>"
