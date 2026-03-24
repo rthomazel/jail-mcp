@@ -3,11 +3,11 @@
 ## layout
 
 ```
-main.go                       server wiring, tool registration, MCP server init
+main.go                       server wiring, tool registration, MCP server init, PATH setup
 internal/config.go            Config struct, env var loading, defaults
 handlers/handler.go           Handler struct, job store, startJob, background job GC
-handlers/context.go           HandleContext, parseMounts
-handlers/exec_sync.go         HandleExec, runCommand (shared by context)
+handlers/context.go           HandleContext, parseMounts, discoverMiseShims, formatPlainTextContext
+handlers/exec_sync.go         HandleExec, runCommand (shared by context), formatPlainText
 handlers/exec_background.go   HandleExecBackground
 handlers/status.go            HandleStatus
 handlers/setup.go             HandleSetup, orderedRules, setupScriptCandidates
@@ -15,7 +15,9 @@ handlers/setup.go             HandleSetup, orderedRules, setupScriptCandidates
 
 ## request flow
 
-All tools go through `mcp-go` → handler method → JSON response.
+All tools go through `mcp-go` → handler method → plain text response.
+
+Responses are formatted as human-readable plain text. Metadata fields are wrapped in `<metadata>` tags, one field per line. Command output is wrapped in `<stdout>` and `<stderr>` tags, raw and unindented.
 
 `exec_sync` and `context` run commands synchronously via `runCommand`, which wraps `bash -c` with a context timeout.
 
@@ -23,7 +25,7 @@ All tools go through `mcp-go` → handler method → JSON response.
 
 `setup` detects the project's package manager by checking for known manifest files in order, builds a compound shell command (`&&`-joined), and launches it as a background job per path. If a `setup.sh` (or equivalent) is found it runs first.
 
-`context` reads `/proc/mounts`, filters noise (proc/sysfs/tmpfs/overlay/etc.), deduplicates child mounts, and collects tool versions in parallel via `runCommand`.
+`context` reads `/proc/mounts`, filters noise (proc/sysfs/tmpfs/overlay/etc.), deduplicates child mounts, collects tool versions via `runCommand`, and discovers mise-managed executables by reading `/mise/shims` directly.
 
 ## concurrency
 
@@ -37,6 +39,7 @@ Config is env-var only. See [config.md](config.md).
 
 - No command filtering — the container is the security boundary, not the server
 - `bash -c` gives agents pipes, redirects, `&&`, subshells
+- Plain text responses over JSON — more readable for humans inspecting output; `<metadata>`, `<stdout>`, `<stderr>` XML tags prevent content/metadata collision
+- `/mise/shims` is prepended to `PATH` at startup in `main.go` so all subprocesses inherit mise-managed tools without requiring shell init files
 - `slog.SetDefault` at startup — no logger threaded through the codebase
 - `internal/` for everything except `main.go`
-- Both compose files use `image: jail-mcp` so builds and runs share the same tag

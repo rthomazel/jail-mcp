@@ -3,22 +3,22 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/tcodes0/jail-mcp/internal"
+	"github.com/rthomazel/jail-mcp/internal"
 )
 
 type commandResult struct {
-	Stdout   string `json:"stdout"`
-	Stderr   string `json:"stderr"`
-	ExitCode int    `json:"exit_code"`
-	Duration string `json:"duration"`
+	Stdout   string
+	Stderr   string
+	ExitCode int
+	Duration string
 	err      string
 }
 
@@ -40,12 +40,21 @@ func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp
 		return mcp.NewToolResultError(result.err), nil
 	}
 
-	b, err := json.Marshal(result)
-	if err != nil {
-		return mcp.NewToolResultError("failed to encode result"), nil
-	}
+	return mcp.NewToolResultText(formatPlainText(result)), nil
+}
 
-	return mcp.NewToolResultText(string(b)), nil
+func formatPlainText(r *commandResult) string {
+	b := strings.Builder{}
+
+	b.WriteString("<metadata>\n")
+	b.WriteString("exit: " + strconv.Itoa(r.ExitCode) + "\n")
+	b.WriteString("duration: " + r.Duration + "\n")
+	b.WriteString("</metadata>\n")
+
+	b.WriteString("\n<stdout>\n" + r.Stdout + "\n</stdout>\n")
+	b.WriteString("\n<stderr>\n" + r.Stderr + "\n</stderr>\n")
+
+	return b.String()
 }
 
 func runCommand(ctx context.Context, cfg *internal.Config, command, cwd string) *commandResult {

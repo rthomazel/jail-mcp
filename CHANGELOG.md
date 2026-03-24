@@ -1,5 +1,36 @@
 # CHANGELOG
 
+## [0.2.2](https://github.com/rthomazel/jail-mcp/pull/5) feat: hidden paths & context improvements
+
+### feat
+
+- [`8861fe9`](https://github.com/rthomazel/jail-mcp/commit/8861fe9) **(docker)** hidden paths — volume mounts can shadow files or directories inside a project to hide them from the agent. mount `/dev/null` over a file or an empty host directory over a subdirectory; mount order in the compose file determines precedence.
+- [`2acf59e`](https://github.com/rthomazel/jail-mcp/commit/2acf59e) **(run)** add publish script — `run` gains a `publish` command for tagging and pushing new builds.
+- [`e651fc1`](https://github.com/rthomazel/jail-mcp/commit/e651fc1) **(handlers/context)** mise shims block, path — `context` now reports the mise shims directory and includes it in the returned `path`, so agents can verify tool availability without manual inspection.
+
+### fix
+
+- [`89528dd`](https://github.com/rthomazel/jail-mcp/commit/89528dd) **(mise)** add shims to path at server start — mise shims are injected into `PATH` when the server starts, making agent-installed tools immediately available to all commands.
+
+### refactor
+
+- [`b58eeec`](https://github.com/rthomazel/jail-mcp/commit/b58eeec) **(handlers)** builder WriteString — handler output construction switched to `WriteString` for consistency.
+- [`c32f73c`](https://github.com/rthomazel/jail-mcp/commit/c32f73c) **(handlers)** plain text output — handlers emit plain text instead of structured markup, simplifying agent parsing.
+
+### build
+
+- [`e8d40bc`](https://github.com/rthomazel/jail-mcp/commit/e8d40bc) improve version string — version now embeds commit hash and build timestamp for clearer traceability.
+
+### docs
+
+- [`7e709ad`](https://github.com/rthomazel/jail-mcp/commit/7e709ad) update docs — README updated with hidden mounts documentation and known bugs section covering tool discovery failure after server update.
+- [`571cae0`](https://github.com/rthomazel/jail-mcp/commit/571cae0) update ideas.
+
+### misc
+
+- [`0c1faf9`](https://github.com/rthomazel/jail-mcp/commit/0c1faf9) change module name.
+- [`cb7a321`](https://github.com/rthomazel/jail-mcp/commit/cb7a321) **(context)** remove go and node from response — trimmed unused fields to reduce noise.
+
 ## [0.2.1](https://github.com/rthomazel/jail-mcp/pull/4) feat: http mode & runtime improvements
 
 ### features
@@ -21,7 +52,6 @@
 - **CI** — added `release.yml` workflow to push the image to `ghcr.io` on tag push.
 - **compose sample** — renamed `docker-compose.sample.yml` → `docker-compose-sample.yml` for consistency; updated to reference the locally built image.
 - **docs** — added `doc/architecture.md`, `doc/config.md`; updated `CLAUDE.md` to be agent-directives-only.
-
 
 ## [0.2.0](https://github.com/rthomazel/jail-mcp/pull/3) feat(handlers): setup
 

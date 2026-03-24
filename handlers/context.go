@@ -3,10 +3,11 @@ package handlers
 import (
 	"bufio"
 	"context"
-	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -19,11 +20,37 @@ var (
 	skipPrefixes = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
 )
 
+const miseShimsDir = "/mise/shims"
+
+var toolNames = []string{
+	"bash", "git", "jujutsu", "mise",
+	"python3", "pip3",
+	"rg", "make", "jq", "curl",
+}
+
+var toolCommands = map[string]string{
+	"bash":    "bash --version | head -1 | cut -d' ' -f4",
+	"git":     "git --version | cut -d' ' -f3",
+	"jujutsu": "jj version",
+	"mise":    "mise v 2>/dev/null | tail -1",
+	"python3": "python3 --version | cut -d' ' -f2",
+	"pip3":    "pip3 --version 2>/dev/null | cut -d' ' -f2",
+	"rg":      "rg --version | head -1 | cut -d' ' -f2",
+	"make":    "make --version | head -1 | cut -d' ' -f3",
+	"jq":      "jq --version",
+	"curl":    "curl --version | head -1",
+}
+
 func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	gather := func(cmd string) string {
 		r := runCommand(ctx, h.cfg, cmd, "/")
 		return strings.TrimSpace(r.Stdout)
 	}
+
+	osName := gather("cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"'")
+	arch := gather("uname -m")
+	disk := gather("df -h / | awk 'NR==2{print $4\" free of \"$2}'")
+	path := os.Getenv("PATH")
 
 	var mounts []string
 	file, err := os.Open("/proc/mounts")
@@ -37,30 +64,88 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		}
 	}
 
-	info := map[string]any{
-		"os":                 gather("cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"'"),
-		"arch":               gather("uname -m"),
-		"shell_exec_timeout": h.cfg.Timeout.String(),
-		"projects":           strings.Join(mounts, "\n"),
-		"disk":               gather("df -h / | awk 'NR==2{print $4\" free of \"$2}'"),
-		"version":            h.version,
-		"tools": map[string]string{
-			"bash":    gather("bash --version | head -1 | cut -d' ' -f4"),
-			"git":     gather("git --version | cut -d' ' -f3"),
-			"go":      gather("go version | cut -d' ' -f3"),
-			"python3": gather("python3 --version | cut -d' ' -f2"),
-			"node":    gather("node --version"),
-			"make":    gather("make --version | head -1 | cut -d' ' -f3"),
-			"jq":      gather("jq --version"),
-		},
+	tools := make(map[string]string, len(toolNames))
+	for _, name := range toolNames {
+		v := gather(toolCommands[name])
+		if v == "" {
+			v = "-"
+		}
+		tools[name] = v
 	}
 
-	b, err := json.Marshal(info)
+	miseShims := discoverMiseShims()
+
+	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, path, h.cfg.Timeout.String(), h.version, mounts, tools, miseShims)), nil
+}
+
+// discoverMiseShims returns executable filenames in miseShimsDir, sorted, skipping
+// non-executable files and wrapper scripts (.cmd, .js).
+func discoverMiseShims() []string {
+	entries, err := os.ReadDir(miseShimsDir)
 	if err != nil {
-		return mcp.NewToolResultError("failed to encode context"), nil
+		return nil
 	}
 
-	return mcp.NewToolResultText(string(b)), nil
+	var shims []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.Contains(name, ".") {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		if info.Mode()&0o111 == 0 {
+			continue
+		}
+		shims = append(shims, filepath.Base(name))
+	}
+
+	sort.Strings(shims)
+	return shims
+}
+
+func formatPlainTextContext(osName, arch, disk, path, timeout, version string, projects []string, tools map[string]string, miseShims []string) string {
+	b := strings.Builder{}
+
+	b.WriteString("<metadata>\n")
+	b.WriteString("os: " + osName + "\n")
+	b.WriteString("arch: " + arch + "\n")
+	b.WriteString("disk: " + disk + "\n")
+	b.WriteString("path: " + path + "\n")
+	b.WriteString("shell_exec_timeout: " + timeout + "\n")
+	b.WriteString("version: " + version + "\n")
+
+	b.WriteString("projects:\n")
+	for _, p := range projects {
+		b.WriteString("  " + p + "\n")
+	}
+
+	b.WriteString("tools:\n")
+	maxLen := 0
+	for _, name := range toolNames {
+		if len(name) > maxLen {
+			maxLen = len(name)
+		}
+	}
+	for _, name := range toolNames {
+		b.WriteString("  " + fmt.Sprintf("%-*s", maxLen+1, name+":") + " " + tools[name] + "\n")
+	}
+
+	if len(miseShims) > 0 {
+		b.WriteString("mise shims:\n")
+		for _, s := range miseShims {
+			b.WriteString("  " + s + "\n")
+		}
+	}
+
+	b.WriteString("</metadata>\n")
+
+	return b.String()
 }
 
 func parseMounts(r io.Reader) ([]string, error) {

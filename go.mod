@@ -1,6 +1,11 @@
-module github.com/tcodes0/jail-mcp
+module github.com/rthomazel/jail-mcp
 
 go 1.25
+
+tool (
+	github.com/joho/godotenv/cmd/godotenv
+	mvdan.cc/gofumpt
+)
 
 require (
 	github.com/mark3labs/mcp-go v0.18.0
@@ -17,9 +22,4 @@ require (
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/tools v0.38.0 // indirect
 	mvdan.cc/gofumpt v0.9.2 // indirect
-)
-
-tool (
-	github.com/joho/godotenv/cmd/godotenv
-	mvdan.cc/gofumpt
 )

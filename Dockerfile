@@ -8,7 +8,7 @@ RUN go mod download
 ARG VERSION
 RUN CGO_ENABLED=0 go build \
     # trim debug info and set version
-    -ldflags="-s -w -X main.version=${VERSION:-dev}" \
+    -ldflags="-s -w -X main.version=${VERSION:-local}" \
     -o jail-mcp .
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────

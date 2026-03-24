@@ -16,16 +16,7 @@ Server would tokenize commands with weights, base command has higher weight, the
 Normalize input.
 Expose historic command stats to allow planning when to use exec sync or background.
 
-## hidden mounts
-
-overwrite sensitive directories and files with blank mounts
-
-## automate image tagging
-
-Add ci workflow to push image to ghcr on tag push
-
 # what not to add
 
 - filesystem MCP tool — redundant, shell already does cat/ls/cp/find
 - command allowlists — defeats the purpose, Docker is the boundary
-- http/sse transport — only needed if running the server persistently and remotely

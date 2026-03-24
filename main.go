@@ -5,12 +5,15 @@ import (
 	"log/slog"
 	"os"
 	"runtime/debug"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"github.com/tcodes0/jail-mcp/handlers"
-	"github.com/tcodes0/jail-mcp/internal"
+	"github.com/rthomazel/jail-mcp/handlers"
+	"github.com/rthomazel/jail-mcp/internal"
 )
+
+const miseShims = "/mise/shims"
 
 // version is set at build time via -ldflags "-X main.version=..."
 var version = "local"
@@ -23,6 +26,11 @@ func main() {
 }
 
 func run() error {
+	current := os.Getenv("PATH")
+	if !strings.Contains(current, miseShims) {
+		_ = os.Setenv("PATH", miseShims+":"+current)
+	}
+
 	cfg, err := internal.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("config: %w", err)
