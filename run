@@ -46,21 +46,6 @@ docker-build)
 
   docker compose -f docker-compose.yml build --build-arg VERSION="${version}_${commit}_$date"
   ;;
-# -- build and push multi-platform image to ghcr.io
-publish)
-  version="$(git describe --tags --abbrev=0)"
-  commit="$(git rev-parse --short HEAD)"
-  date="$(date +%Y.%m.%d.%H:%M)"
-
-  # Requires the caller to be logged in (docker login ghcr.io) beforehand and have a buildx builder with multi-platform support (docker buildx create --use)
-  docker buildx build \
-    --platform linux/amd64,linux/arm64 \
-    --build-arg VERSION="${version}_${commit}_$date" \
-    --tag "$IMAGE:$version" \
-    --tag "$IMAGE:latest" \
-    --push \
-    .
-  ;;
 # -- print a prompt for updating the changelog
 prompt:changelog)
   cat << 'EOF'
