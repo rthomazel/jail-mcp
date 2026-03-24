@@ -124,6 +124,11 @@ Then add `http://localhost:8001` as a tool server in your client.
 
 The HTTP mode is enabled by setting `JAIL_MCP_HTTP=true` in the container environment, which is pre-configured in `docker-compose-http-sample.yml`.
 
+#### Known Bugs
+
+When updating the MCP server to a new build, Claude may show errors or fail to discover tools.
+This can be fixed by renaming the server in the configuration above (e.g. `jail-mcp` → `jailMPC`), which forces the client to treat it as a new server and re-register the tools.
+
 **4. Discovery and setup**
 
 To discover projects, the agent can call the context tool.
