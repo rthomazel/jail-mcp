@@ -1,3 +1,4 @@
+// jail mcp server binary
 package main
 
 import (
@@ -67,8 +68,8 @@ func run() error {
 
 	s.AddTool(
 		mcp.NewTool("exec_sync",
-			mcp.WithDescription("Execute a shell command. Returns stdout, stderr, exit code, and duration. Times out after "+cfg.Timeout.String()+". Most agents should load this now and defer exec_background."),
-			mcp.WithString("command", mcp.Required(), mcp.Description("Shell command to execute")),
+			mcp.WithDescription("Execute one or more shell commands. Returns stdout, stderr, exit code, and duration per command. Times out after "+cfg.Timeout.String()+". Most agents should load this now and defer exec_background."),
+			mcp.WithArray("commands", mcp.Required(), mcp.Description("Shell commands to execute.")),
 			mcp.WithString("cwd", mcp.Description("Working directory. Defaults to /")),
 		),
 		h.HandleExec,
@@ -76,8 +77,8 @@ func run() error {
 
 	s.AddTool(
 		mcp.NewTool("exec_background",
-			mcp.WithDescription("Execute a very long-running shell command in the background. Returns a job_id immediately. Use exec_status to poll for results. Times out after "+cfg.BackgroundTimeout.String()+"."),
-			mcp.WithString("command", mcp.Required(), mcp.Description("Shell command to execute")),
+			mcp.WithDescription("Execute one or more shell commands in the background. Returns a job_id per command immediately. Use exec_status to poll for results. Times out after "+cfg.BackgroundTimeout.String()+"."),
+			mcp.WithArray("commands", mcp.Required(), mcp.Description("Shell commands to execute.")),
 			mcp.WithString("cwd", mcp.Description("Working directory. Defaults to /")),
 		),
 		h.HandleExecBackground,

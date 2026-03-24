@@ -15,6 +15,7 @@ import (
 )
 
 type commandResult struct {
+	Command  string
 	Stdout   string
 	Stderr   string
 	ExitCode int
@@ -23,38 +24,55 @@ type commandResult struct {
 }
 
 func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	args := req.Params.Arguments
-
-	command, ok := args["command"].(string)
-	if !ok || command == "" {
-		return mcp.NewToolResultError("missing required parameter: command"), nil
+	commands, ok := parseStringSlice(req.Params.Arguments["commands"])
+	if !ok || len(commands) == 0 {
+		return mcp.NewToolResultError("missing required parameter: commands"), nil
 	}
 
-	cwd, _ := args["cwd"].(string)
+	cwd, _ := req.Params.Arguments["cwd"].(string)
 	if cwd == "" {
 		cwd = "/"
 	}
 
-	result := runCommand(ctx, h.cfg, command, cwd)
-	if result.err != "" {
-		return mcp.NewToolResultError(result.err), nil
+	results := make([]*commandResult, len(commands))
+	for i, cmd := range commands {
+		r := runCommand(ctx, h.cfg, cmd, cwd)
+		r.Command = cmd
+		results[i] = r
+		if r.err != "" {
+			return mcp.NewToolResultError(r.err), nil
+		}
 	}
 
-	return mcp.NewToolResultText(formatPlainText(result)), nil
+	multi := len(results) > 1
+	return mcp.NewToolResultText(formatExecResults(results, multi)), nil
 }
 
-func formatPlainText(r *commandResult) string {
+func formatExecResults(results []*commandResult, multi bool) string {
 	b := strings.Builder{}
+	for i, r := range results {
+		if multi {
+			openTag(&b, "command", "index", strconv.Itoa(i))
+		}
+		formatSingleResult(&b, r, multi)
+		if multi {
+			closeTag(&b, "command")
+		}
+	}
+	return b.String()
+}
 
-	b.WriteString("<metadata>\n")
+func formatSingleResult(b *strings.Builder, r *commandResult, includeCommand bool) {
+	openTag(b, "metadata")
+	if includeCommand {
+		b.WriteString("command: " + r.Command + "\n")
+	}
+
 	b.WriteString("exit: " + strconv.Itoa(r.ExitCode) + "\n")
 	b.WriteString("duration: " + r.Duration + "\n")
-	b.WriteString("</metadata>\n")
-
+	closeTag(b, "metadata")
 	b.WriteString("\n<stdout>\n" + r.Stdout + "\n</stdout>\n")
 	b.WriteString("\n<stderr>\n" + r.Stderr + "\n</stderr>\n")
-
-	return b.String()
 }
 
 func runCommand(ctx context.Context, cfg *internal.Config, command, cwd string) *commandResult {
