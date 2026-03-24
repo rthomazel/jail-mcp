@@ -25,17 +25,17 @@ Each path is inspected independently using two mechanisms: manifest rules and a 
 `setup` walks a fixed ordered list of manifest files, every match appends its command to the job.
 The full list in order:
 
-| manifest file      | command                            |
-| ------------------ | ---------------------------------- |
-| `.tool-versions`   | `mise install`                     |
+| manifest file      | command                              |
+| ------------------ | ------------------------------------ |
+| `.tool-versions`   | `mise install`                       |
 | `go.mod`           | `go mod download && go install tool` |
-| `yarn.lock`        | `yarn install`                     |
-| `package.json`     | `npm install`                      |
-| `requirements.txt` | `pip install -r requirements.txt`  |
-| `pyproject.toml`   | `pip install .`                    |
-| `Gemfile`          | `bundle install`                   |
-| `Cargo.toml`       | `cargo fetch`                      |
-| `mix.exs`          | `mix deps.get`                     |
+| `yarn.lock`        | `yarn install`                       |
+| `package.json`     | `npm install`                        |
+| `requirements.txt` | `pip install -r requirements.txt`    |
+| `pyproject.toml`   | `pip install .`                      |
+| `Gemfile`          | `bundle install`                     |
+| `Cargo.toml`       | `cargo fetch`                        |
+| `mix.exs`          | `mix deps.get`                       |
 
 Multiple manifests can match — for example a Go project with `.tool-versions` produces `mise install && go mod download && go install tool`.
 

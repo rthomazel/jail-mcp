@@ -53,7 +53,6 @@
 - **compose sample** — renamed `docker-compose.sample.yml` → `docker-compose-sample.yml` for consistency; updated to reference the locally built image.
 - **docs** — added `doc/architecture.md`, `doc/config.md`; updated `CLAUDE.md` to be agent-directives-only.
 
-
 ## [0.2.0](https://github.com/rthomazel/jail-mcp/pull/3) feat(handlers): setup
 
 ### features

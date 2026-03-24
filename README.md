@@ -44,9 +44,10 @@ _Linux:_ consider using [rootless docker](https://docs.docker.com/engine/securit
 #### Read-only paths
 
 The example configuration shows how to add read-only paths, i.e `.git`.
+
 ```yaml
-  # :ro adds a path as read-only, must come after the parent path
-  - /Users/you/helloworld/.git:/projects/helloworld/.git:ro
+# :ro adds a path as read-only, must come after the parent path
+- /Users/you/helloworld/.git:/projects/helloworld/.git:ro
 ```
 
 #### Hidden mounts

@@ -2,7 +2,6 @@
 
 Read `doc/` .md files for architecture and project documentation before making changes — it's faster than reading source.
 
-
 ## guidelines
 
 - Run `go mod tidy` after any `go.mod` or dependency changes
