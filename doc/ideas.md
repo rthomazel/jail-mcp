@@ -18,12 +18,12 @@ Expose historic command stats to allow planning when to use exec sync or backgro
 
 ## hidden mounts
 
-overwrite sensitive directories and files with blank mounts
+Overwrite sensitive directories and files with blank mounts
 
 ## enhance docs with agent guidance
 
-add to docs prompts and tips to get agents to use jail mcp tools more effectively
-add docs on how to obtain project files (probably clone the repo) or package in some way
+Add to docs prompts and tips to get agents to use jail mcp tools more effectively
+Add docs on how to obtain project files (probably clone the repo) or package in some way
 
 # what not to add
 
