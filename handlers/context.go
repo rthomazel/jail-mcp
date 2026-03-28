@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/rthomazel/jail-mcp/internal/pathsnapshot"
 	"github.com/samber/lo"
 )
 
@@ -68,8 +69,9 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 	}
 
 	miseShims := discoverMiseShims()
+	detected := pathsnapshot.Diff()
 
-	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, path, h.cfg.Timeout.String(), h.version, mounts, tools, miseShims)), nil
+	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, path, h.cfg.Timeout.String(), h.version, mounts, tools, miseShims, detected)), nil
 }
 
 // discoverMiseShims returns executable filenames in miseShimsDir, sorted, skipping
@@ -103,7 +105,7 @@ func discoverMiseShims() []string {
 	return shims
 }
 
-func formatPlainTextContext(osName, arch, disk, path, timeout, version string, projects []string, tools map[string]string, miseShims []string) string {
+func formatPlainTextContext(osName, arch, disk, path, timeout, version string, projects []string, tools map[string]string, miseShims []string, detected []pathsnapshot.Entry) string {
 	b := strings.Builder{}
 
 	b.WriteString("<metadata>\n")
@@ -136,6 +138,13 @@ func formatPlainTextContext(osName, arch, disk, path, timeout, version string, p
 		b.WriteString("mise shims:\n")
 		for _, s := range miseShims {
 			b.WriteString("  " + s + "\n")
+		}
+	}
+
+	if len(detected) > 0 {
+		b.WriteString("auto-detected in path:\n")
+		for _, e := range detected {
+			b.WriteString("  " + e.Name + " " + e.Path + "\n")
 		}
 	}
 

@@ -12,6 +12,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rthomazel/jail-mcp/handlers"
 	"github.com/rthomazel/jail-mcp/internal"
+	"github.com/rthomazel/jail-mcp/internal/pathsnapshot"
 )
 
 const miseShims = "/mise/shims"
@@ -48,6 +49,8 @@ func run() error {
 			os.Exit(1)
 		}
 	}()
+
+	pathsnapshot.Diff()
 
 	slog.Info("jail-mcp starting", "version", version, "timeout", cfg.Timeout, "background_timeout", cfg.BackgroundTimeout)
 

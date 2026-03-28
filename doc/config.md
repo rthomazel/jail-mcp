@@ -10,3 +10,14 @@ Config is loaded from environment variables only — no flags, no config files.
 Values must be valid Go duration strings (e.g. `30s`, `2m`, `1h`).
 
 Set these in the `environment:` section of `docker-compose.yml`.
+
+## path snapshot
+
+On startup the server scans all directories in `$PATH` and writes a snapshot of
+the discovered executables to `/root/.jail-mcp-path-snapshot` (TSV: `name\tpath`,
+one entry per line, sorted). This file is created once and never updated.
+
+On each `context` call the server rescans `$PATH` and diffs against the snapshot.
+Any executables not present at startup appear under `auto-detected in path:` in
+the response — useful for binaries installed by setup scripts that are not
+managed by mise.
