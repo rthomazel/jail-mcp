@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 )
@@ -20,21 +19,21 @@ func (h *Handler) HandleExecBackground(_ context.Context, req mcp.CallToolReques
 	}
 
 	multi := len(commands) > 1
-	b := strings.Builder{}
+	var b xmlBuilder
 
-	openTag(&b, "metadata")
+	b.openTag("metadata")
 
 	for i, cmd := range commands {
 		j := h.startJob(cmd, cwd)
 		if multi {
-			fmt.Fprintf(&b, "command_%d: %s\n", i, cmd)
-			fmt.Fprintf(&b, "job_id_%d: %s\n", i, j.id)
+			fmt.Fprintf(&b.Builder, "command_%d: %s\n", i, cmd)
+			fmt.Fprintf(&b.Builder, "job_id_%d: %s\n", i, j.id)
 		} else {
 			b.WriteString("job_id: " + j.id + "\n")
 		}
 	}
 
-	closeTag(&b, "metadata")
+	b.closeTag("metadata", false)
 
 	return mcp.NewToolResultText(b.String()), nil
 }

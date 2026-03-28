@@ -86,8 +86,8 @@ func run() error {
 
 	s.AddTool(
 		mcp.NewTool("status",
-			mcp.WithDescription("Poll the status of a background job. Returns done, stdout, stderr, exit_code (if done), and duration."),
-			mcp.WithString("job_id", mcp.Required(), mcp.Description("Job ID returned by exec_background")),
+			mcp.WithDescription("Poll the status of one or more background jobs. Returns done, stdout, stderr, exit_code (if done), and duration per job."),
+			mcp.WithArray("job_ids", mcp.Required(), mcp.Description("Job IDs returned by exec_background.")),
 		),
 		h.HandleStatus,
 	)

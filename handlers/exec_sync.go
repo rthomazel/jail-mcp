@@ -49,30 +49,30 @@ func (h *Handler) HandleExec(ctx context.Context, req mcp.CallToolRequest) (*mcp
 }
 
 func formatExecResults(results []*commandResult, multi bool) string {
-	b := strings.Builder{}
+	var b xmlBuilder
+
 	for i, r := range results {
 		if multi {
-			openTag(&b, "command", "index", strconv.Itoa(i))
+			b.openTag("command", "index", strconv.Itoa(i))
 		}
-		formatSingleResult(&b, r, multi)
+
+		b.openTag("metadata")
 		if multi {
-			closeTag(&b, "command")
+			b.WriteString("command: " + r.Command + "\n")
+		}
+
+		b.WriteString("exit: " + strconv.Itoa(r.ExitCode) + "\n")
+		b.WriteString("duration: " + r.Duration + "\n")
+		b.closeTag("metadata", true)
+		b.tag("stdout", r.Stdout, true)
+		b.tag("stderr", r.Stderr, false)
+
+		if multi {
+			b.closeTag("command", true)
 		}
 	}
+
 	return b.String()
-}
-
-func formatSingleResult(b *strings.Builder, r *commandResult, includeCommand bool) {
-	openTag(b, "metadata")
-	if includeCommand {
-		b.WriteString("command: " + r.Command + "\n")
-	}
-
-	b.WriteString("exit: " + strconv.Itoa(r.ExitCode) + "\n")
-	b.WriteString("duration: " + r.Duration + "\n")
-	closeTag(b, "metadata")
-	b.WriteString("\n<stdout>\n" + r.Stdout + "\n</stdout>\n")
-	b.WriteString("\n<stderr>\n" + r.Stderr + "\n</stderr>\n")
 }
 
 func runCommand(ctx context.Context, cfg *internal.Config, command, cwd string) *commandResult {

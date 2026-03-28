@@ -16,17 +16,11 @@ import (
 )
 
 var (
-	skipFstypes  = []string{"proc", "sysfs", "tmpfs", "devpts", "cgroup2", "cgroup", "mqueue", "overlay"}
+	skipFSTypes  = []string{"proc", "sysfs", "tmpfs", "devpts", "cgroup2", "cgroup", "mqueue", "overlay"}
 	skipPrefixes = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
 )
 
 const miseShimsDir = "/mise/shims"
-
-var toolNames = []string{
-	"bash", "git", "jujutsu", "mise",
-	"python3", "pip3",
-	"rg", "make", "jq", "curl",
-}
 
 var toolCommands = map[string]string{
 	"bash":    "bash --version | head -1 | cut -d' ' -f4",
@@ -64,9 +58,9 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		}
 	}
 
-	tools := make(map[string]string, len(toolNames))
-	for _, name := range toolNames {
-		v := gather(toolCommands[name])
+	tools := make(map[string]string, len(toolCommands))
+	for name, cmd := range toolCommands {
+		v := gather(cmd)
 		if v == "" {
 			v = "-"
 		}
@@ -127,12 +121,14 @@ func formatPlainTextContext(osName, arch, disk, path, timeout, version string, p
 
 	b.WriteString("tools:\n")
 	maxLen := 0
-	for _, name := range toolNames {
+
+	for name := range toolCommands {
 		if len(name) > maxLen {
 			maxLen = len(name)
 		}
 	}
-	for _, name := range toolNames {
+
+	for name := range toolCommands {
 		b.WriteString("  " + fmt.Sprintf("%-*s", maxLen+1, name+":") + " " + tools[name] + "\n")
 	}
 
@@ -151,6 +147,7 @@ func formatPlainTextContext(osName, arch, disk, path, timeout, version string, p
 func parseMounts(r io.Reader) ([]string, error) {
 	var candidates []string
 	scanner := bufio.NewScanner(r)
+
 	for scanner.Scan() {
 		fields := strings.Fields(scanner.Text())
 		if len(fields) < 3 {
@@ -159,7 +156,7 @@ func parseMounts(r io.Reader) ([]string, error) {
 
 		mountpoint, fstype := fields[1], fields[2]
 
-		if mountpoint == "/" || lo.Contains(skipFstypes, fstype) {
+		if mountpoint == "/" || lo.Contains(skipFSTypes, fstype) {
 			continue
 		}
 

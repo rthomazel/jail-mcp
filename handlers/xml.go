@@ -2,22 +2,42 @@ package handlers
 
 import (
 	"fmt"
-	"io"
+	"strings"
 )
 
-// openTag writes an opening XML tag to w. Optional attrs are key-value pairs:
-// openTag(w, "command", "index", "0") writes <command index="0">.
-func openTag(w io.Writer, tag string, attrs ...string) {
-	_, _ = fmt.Fprintf(w, "<%s", tag)
+// xmlBuilder wraps strings.Builder with XML tag helpers.
+type xmlBuilder struct{ strings.Builder }
+
+// openTag writes an opening XML tag. Optional attrs are key-value pairs:
+// b.openTag("command", "index", "0") writes <command index="0">.
+func (b *xmlBuilder) openTag(tag string, attrs ...string) {
+	_, _ = fmt.Fprintf(&b.Builder, "<%s", tag)
+
 	for i := 0; i+1 < len(attrs); i += 2 {
-		_, _ = fmt.Fprintf(w, " %s=%q", attrs[i], attrs[i+1])
+		_, _ = fmt.Fprintf(&b.Builder, " %s=%q", attrs[i], attrs[i+1])
 	}
-	_, _ = fmt.Fprintf(w, ">\n")
+
+	b.WriteString(">\n")
 }
 
-// closeTag writes a closing XML tag to w.
-func closeTag(w io.Writer, tag string) {
-	_, _ = fmt.Fprintf(w, "</%s>\n", tag)
+// closeTag writes a closing XML tag with optional trailing newline.
+func (b *xmlBuilder) closeTag(tag string, newline bool) {
+	_, _ = fmt.Fprintf(&b.Builder, "</%s>\n", tag)
+
+	if newline {
+		b.WriteString("\n")
+	}
+}
+
+// tag writes <name attrs...>\ncontents\n</name>\n — with optional trailing newline.
+func (b *xmlBuilder) tag(name, contents string, newline bool, attrs ...string) {
+	b.openTag(name, attrs...)
+
+	contents = strings.TrimRight(contents, "\n")
+
+	b.WriteString(contents)
+	b.WriteString("\n")
+	b.closeTag(name, newline)
 }
 
 // parseStringSlice coerces a []any (as returned by mcp-go for array params)
