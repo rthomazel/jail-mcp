@@ -31,7 +31,7 @@ var preInstalled = map[string]string{
 	"rg":      "rg --version | head -1 | cut -d' ' -f2",
 	"make":    "make --version | head -1 | cut -d' ' -f3",
 	"jq":      "jq --version",
-	"curl":    "curl --version | head -1",
+	"curl":    "curl --version | head -1 | cut -d' ' -f1-2",
 }
 
 type mount struct {
