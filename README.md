@@ -102,7 +102,7 @@ _Linux:_ `~/.config/Claude/claude_desktop_config.json`
         "compose",
         "-f",
         // Linux: /home/you
-        "/Users/you/jail-mcp/docker-compose.yml",
+        "/Users/you/your-compose-file/docker-compose.yml",
         "run",
         "--rm",
         "-i",
@@ -127,10 +127,12 @@ Then add `http://localhost:8001` as a tool server in your client.
 
 The HTTP mode is enabled by setting `JAIL_MCP_HTTP=true` in the container environment, which is pre-configured in `docker-compose-http-sample.yml`.
 
-#### Known Bugs
+#### Known (client) Bugs
 
-When updating the MCP server to a new build, Claude may show errors or fail to discover tools.
-This can be fixed by renaming the server in the configuration above (e.g. `jail-mcp` → `jailMPC`), which forces the client to treat it as a new server and re-register the tools.
+When updating the MCP server to a new build, Claude desktop may show errors or fail to discover tools.
+This has been observed to happen when changing permission settings as well.
+This can be fixed by renaming the server in the configuration above (e.g. `jail-mcp` → `1_jail-mcp`), which forces the client to treat it as a new server and re-register the tools.
+Renaming the first letter seems to be important.
 
 **4. Discovery and setup**
 
