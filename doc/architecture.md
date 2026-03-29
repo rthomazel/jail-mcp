@@ -43,3 +43,14 @@ Config is env-var only. See [config.md](config.md).
 - `/mise/shims` is prepended to `PATH` at startup in `main.go` so all subprocesses inherit mise-managed tools without requiring shell init files
 - `slog.SetDefault` at startup — no logger threaded through the codebase
 - `internal/` for everything except `main.go`
+
+## persistence
+
+Two named Docker volumes survive container restarts:
+
+| volume           | mountpoint | contents                                      |
+| ---------------- | ---------- | --------------------------------------------- |
+| `jail-mcp-mise`  | `/mise`    | mise installs, shims                          |
+| `jail-mcp-root`  | `/root`    | Go module cache, path snapshot, ad-hoc tools  |
+
+This means `setup` only needs to run once per project — language installs and downloaded modules persist. The path snapshot at `/root/.jail-mcp-path-snapshot` also persists, so `auto-detected in path:` correctly reflects tools installed in prior sessions rather than treating them as newly detected.

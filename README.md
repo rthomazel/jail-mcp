@@ -84,7 +84,7 @@ docker pull ghcr.io/rthomazel/jail-mcp:latest
 
 ### Claude Desktop (stdio)
 
-Spawns a fresh container per session via `docker compose run`. The container exits when the session ends.
+Spawns a fresh container per session via `docker compose run`. Named volumes persist mise installs, the Go module cache, and the path snapshot across sessions — setup only runs once per project.
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
