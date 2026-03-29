@@ -18,8 +18,11 @@ import (
 
 var (
 	skipFSTypes  = []string{"proc", "sysfs", "tmpfs", "devpts", "cgroup2", "cgroup", "mqueue", "overlay"}
-	skipPrefixes = []string{"/proc", "/sys", "/dev", "/run", "/etc", "/mise", "/root"}
+	skipPrefixes = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
 )
+
+// persistentVolumes are named Docker volumes that outlive the container.
+var persistentVolumes = []string{"/mise", "/root"}
 
 const miseShimsDir = "/mise/shims"
 
@@ -36,6 +39,12 @@ var preInstalled = map[string]string{
 	"curl":    "curl --version | head -1",
 }
 
+type mount struct {
+	mountpoint string
+	ro         bool
+	persistent bool
+}
+
 func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	gather := func(cmd string) string {
 		r := runCommand(ctx, h.cfg, cmd, "/")
@@ -47,7 +56,7 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 	disk := gather("df -h / | awk 'NR==2{print $4\" free of \"$2}'")
 	path := os.Getenv("PATH")
 
-	var mounts []string
+	var mounts []mount
 	file, err := os.Open("/proc/mounts")
 	if err != nil {
 		slog.Error("failed to read mounts", "err", err)
@@ -105,7 +114,7 @@ func discoverMiseShims() []string {
 	return shims
 }
 
-func formatPlainTextContext(osName, arch, disk, path, timeout, version string, projects []string, versions map[string]string, miseShims []string, detected []pathsnapshot.Entry) string {
+func formatPlainTextContext(osName, arch, disk, path, timeout, version string, mounts []mount, versions map[string]string, miseShims []string, detected []pathsnapshot.Entry) string {
 	b := strings.Builder{}
 
 	b.WriteString("<metadata>\n")
@@ -116,10 +125,18 @@ func formatPlainTextContext(osName, arch, disk, path, timeout, version string, p
 	b.WriteString("shell_exec_timeout: " + timeout + "\n")
 	b.WriteString("version: " + version + "\n")
 
-	b.WriteString("projects:\n")
-	for _, p := range projects {
-		b.WriteString("  " + p + "\n")
+	b.WriteString("volumes:\n")
+	for _, m := range mounts {
+		switch {
+		case m.persistent:
+			b.WriteString("  " + m.mountpoint + " persistent\n")
+		case m.ro:
+			b.WriteString("  " + m.mountpoint + " ro\n")
+		default:
+			b.WriteString("  " + m.mountpoint + " rw\n")
+		}
 	}
+	b.WriteString("note: container is ephemeral — only volumes above persist across sessions; install to /root/bin to persist across sessions\n")
 
 	b.WriteString("installed:\n")
 	maxLen := 0
@@ -153,17 +170,17 @@ func formatPlainTextContext(osName, arch, disk, path, timeout, version string, p
 	return b.String()
 }
 
-func parseMounts(r io.Reader) ([]string, error) {
-	var candidates []string
+func parseMounts(r io.Reader) ([]mount, error) {
+	var mounts []mount
 	scanner := bufio.NewScanner(r)
 
 	for scanner.Scan() {
 		fields := strings.Fields(scanner.Text())
-		if len(fields) < 3 {
+		if len(fields) < 4 {
 			continue
 		}
 
-		mountpoint, fstype := fields[1], fields[2]
+		mountpoint, fstype, options := fields[1], fields[2], fields[3]
 
 		if mountpoint == "/" || lo.Contains(skipFSTypes, fstype) {
 			continue
@@ -176,28 +193,23 @@ func parseMounts(r io.Reader) ([]string, error) {
 			continue
 		}
 
-		candidates = append(candidates, mountpoint)
+		ro := strings.HasPrefix(options, "ro,") || options == "ro"
+		persistent := lo.Contains(persistentVolumes, mountpoint)
+
+		mounts = append(mounts, mount{
+			mountpoint: mountpoint,
+			ro:         ro,
+			persistent: persistent,
+		})
 	}
 
-	scanErr := scanner.Err()
-	if scanErr != nil {
-		return nil, scanErr
+	if err := scanner.Err(); err != nil {
+		return nil, err
 	}
 
-	sort.Slice(candidates, func(i, j int) bool {
-		return len(candidates[i]) < len(candidates[j])
+	sort.Slice(mounts, func(i, j int) bool {
+		return mounts[i].mountpoint < mounts[j].mountpoint
 	})
 
-	kept := lo.Reduce(candidates, func(acc []string, candidate string, _ int) []string {
-		isChild := lo.SomeBy(acc, func(k string) bool {
-			return strings.HasPrefix(candidate, k+"/")
-		})
-		if isChild {
-			return acc
-		}
-		return append(acc, candidate)
-	}, []string{})
-
-	sort.Strings(kept)
-	return kept, nil
+	return mounts, nil
 }
