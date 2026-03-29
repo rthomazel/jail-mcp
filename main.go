@@ -28,10 +28,17 @@ func main() {
 }
 
 func run() error {
+	homeBin := os.Getenv("HOME") + "/bin"
+	_ = os.MkdirAll(homeBin, 0o755)
+
 	current := os.Getenv("PATH")
 	if !strings.Contains(current, miseShims) {
-		_ = os.Setenv("PATH", miseShims+":"+current)
+		current = miseShims + ":" + current
 	}
+	if !strings.Contains(current, homeBin) {
+		current = homeBin + ":" + current
+	}
+	_ = os.Setenv("PATH", current)
 
 	cfg, err := internal.LoadConfig()
 	if err != nil {

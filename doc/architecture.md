@@ -46,11 +46,16 @@ Config is env-var only. See [config.md](config.md).
 
 ## persistence
 
-Two named Docker volumes survive container restarts:
+The container state persists across sessions.
+State outside volumes is lost when the container is recreated (image update, `docker compose down`).
+To persist across image updates, install it to `$HOME/bin` — the server creates this directory on startup and prepends it to `PATH`.
+
+Two named Docker volumes outlive the container:
 
 | volume           | mountpoint | contents                                      |
 | ---------------- | ---------- | --------------------------------------------- |
 | `jail-mcp-mise`  | `/mise`    | mise installs, shims                          |
 | `jail-mcp-root`  | `/root`    | Go module cache, path snapshot, ad-hoc tools  |
 
-This means `setup` only needs to run once per project — language installs and downloaded modules persist. The path snapshot at `/root/.jail-mcp-path-snapshot` also persists, so `auto-detected in path:` correctly reflects tools installed in prior sessions rather than treating them as newly detected.
+This means `setup` only needs to run once per project — language installs and downloaded modules persist.
+The path snapshot at `/root/.jail-mcp-path-snapshot` also persists, so `auto-detected in path:` correctly reflects tools installed in prior sessions rather than treating them as newly detected.

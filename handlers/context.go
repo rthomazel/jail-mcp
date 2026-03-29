@@ -18,7 +18,7 @@ import (
 
 var (
 	skipFSTypes  = []string{"proc", "sysfs", "tmpfs", "devpts", "cgroup2", "cgroup", "mqueue", "overlay"}
-	skipPrefixes = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
+	skipPrefixes = []string{"/proc", "/sys", "/dev", "/run", "/etc", "/mise", "/root"}
 )
 
 const miseShimsDir = "/mise/shims"
