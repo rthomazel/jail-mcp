@@ -72,6 +72,7 @@ Steps:
 3. Group commits by their conventional commit type (feat, fix, refactor, build, docs, misc, etc.) — one ### block per type.
 4. For each commit, write a bullet in the format:
    - [\`{hash}\`](\`{repo_url}/commit/{hash}\`) **(scope)** message — short technical description expanding on what changed and why.
+   note: commits of type misc should be omitted from the changelog if they are particularly technical, short or dry.
 5. Omit the scope prefix if the commit has none.
 6. Prepend the new entry to the top of the changelog, below the # CHANGELOG heading, without modifying any existing entries.
 
