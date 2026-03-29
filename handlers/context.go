@@ -17,12 +17,10 @@ import (
 )
 
 var (
-	skipFSTypes  = []string{"proc", "sysfs", "tmpfs", "devpts", "cgroup2", "cgroup", "mqueue", "overlay"}
-	skipPrefixes = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
+	skipFSTypes       = []string{"proc", "sysfs", "tmpfs", "devpts", "cgroup2", "cgroup", "mqueue", "overlay"}
+	skipPrefixes      = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
+	persistentVolumes = []string{"/mise", "/root"}
 )
-
-// persistentVolumes are named Docker volumes that outlive the container.
-var persistentVolumes = []string{"/mise", "/root"}
 
 const miseShimsDir = "/mise/shims"
 
