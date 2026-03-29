@@ -84,9 +84,9 @@ docker pull ghcr.io/rthomazel/jail-mcp:latest
 
 ### Claude Desktop (stdio)
 
-Spawns a container per session via `docker compose run`.
-The container persists between sessions — anything installed inside it survives restarts.
-To keep state across image updates, install them to `$HOME/bin`, which is persisted on a docker volume.
+Spawns a fresh container per session via `docker compose run`.
+The container is ephemeral — `--rm` removes it after each session. Only named volumes (`/mise`, `/root`) persist.
+To install ad-hoc tools that survive across sessions, install to `$HOME/bin` (`/root/bin`), which is on the `jail-mcp-root` volume.
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
@@ -104,6 +104,7 @@ _Linux:_ `~/.config/Claude/claude_desktop_config.json`
         // Linux: /home/you
         "/Users/you/jail-mcp/docker-compose.yml",
         "run",
+        "--rm",
         "-i",
         "jail-mcp"
       ]
