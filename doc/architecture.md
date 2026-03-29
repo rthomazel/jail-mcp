@@ -43,3 +43,21 @@ Config is env-var only. See [config.md](config.md).
 - `/mise/shims` is prepended to `PATH` at startup in `main.go` so all subprocesses inherit mise-managed tools without requiring shell init files
 - `slog.SetDefault` at startup — no logger threaded through the codebase
 - `internal/` for everything except `main.go`
+
+## persistence
+
+Containers are ephemeral — `docker compose run --rm` creates a new container each session and removes it on exit. Anything written to the container writable layer is lost.
+
+Only named volumes persist across sessions:
+
+| volume           | mountpoint | contents                                      |
+| ---------------- | ---------- | --------------------------------------------- |
+| `jail-mcp-mise`  | `/mise`    | mise installs, shims                          |
+| `jail-mcp-root`  | `/root`    | Go module cache, path snapshot, ad-hoc tools  |
+
+Volumes are deleted only by `docker volume rm` or `docker compose down -v`.
+
+This means `setup` only needs to run once per project — language installs and downloaded modules persist.
+The path snapshot at `/root/.jail-mcp-path-snapshot` also persists, so `auto-detected in path:` correctly reflects tools installed in prior sessions rather than treating them as newly detected.
+
+To install ad-hoc tools that survive across sessions, install to `$HOME/bin` (`/root/bin`) — the server creates this directory on startup and prepends it to `PATH`. Do not install to `/usr/local/bin` or other paths outside volumes; they will not survive the next session.

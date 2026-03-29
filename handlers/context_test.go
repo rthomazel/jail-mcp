@@ -9,7 +9,7 @@ func TestParseMounts(t *testing.T) {
 	useCases := []struct {
 		name  string
 		input string
-		want  []string
+		want  []mount
 	}{
 		{
 			name:  "empty input",
@@ -17,21 +17,53 @@ func TestParseMounts(t *testing.T) {
 			want:  nil,
 		},
 		{
-			name: "deeper submount deduplication",
-			input: `
-/dev/sda1 /data ext4 rw 0 0
-/dev/sda1 /data/sub ext4 rw 0 0
-/dev/sda1 /data/sub/deep ext4 rw 0 0
-`,
-			want: []string{"/data"},
-		},
-		{
 			name: "siblings kept",
-			input: `
-/dev/sda1 /projects/foo ext4 rw 0 0
+			input: `/dev/sda1 /projects/foo ext4 rw 0 0
 /dev/sda1 /projects/bar ext4 rw 0 0
 `,
-			want: []string{"/projects/bar", "/projects/foo"},
+			want: []mount{
+				{mountpoint: "/projects/bar", ro: false, persistent: false},
+				{mountpoint: "/projects/foo", ro: false, persistent: false},
+			},
+		},
+		{
+			name: "submounts kept",
+			input: `/dev/sda1 /projects/foo ext4 rw 0 0
+/dev/sda1 /projects/foo/.git ext4 ro 0 0
+`,
+			want: []mount{
+				{mountpoint: "/projects/foo", ro: false, persistent: false},
+				{mountpoint: "/projects/foo/.git", ro: true, persistent: false},
+			},
+		},
+		{
+			name: "persistent volumes",
+			input: `/dev/sda1 /mise ext4 rw 0 0
+/dev/sda1 /root ext4 rw 0 0
+`,
+			want: []mount{
+				{mountpoint: "/mise", ro: false, persistent: true},
+				{mountpoint: "/root", ro: false, persistent: true},
+			},
+		},
+		{
+			name: "skip noise fstypes",
+			input: `/dev/sda1 /projects/foo ext4 rw 0 0
+proc /proc proc rw 0 0
+tmpfs /tmp tmpfs rw 0 0
+`,
+			want: []mount{
+				{mountpoint: "/projects/foo", ro: false, persistent: false},
+			},
+		},
+		{
+			name: "skip /etc mounts",
+			input: `/dev/sda1 /projects/foo ext4 rw 0 0
+/dev/sda1 /etc/hosts ext4 rw 0 0
+`,
+			want: []mount{
+				{mountpoint: "/projects/foo", ro: false, persistent: false},
+			},
 		},
 	}
 
@@ -47,7 +79,7 @@ func TestParseMounts(t *testing.T) {
 			}
 			for i := range got {
 				if got[i] != u.want[i] {
-					t.Errorf("got[%d] = %q, want %q", i, got[i], u.want[i])
+					t.Errorf("got[%d] = %+v, want %+v", i, got[i], u.want[i])
 				}
 			}
 		})

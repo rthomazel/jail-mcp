@@ -7,28 +7,21 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/rthomazel/jail-mcp/internal/pathsnapshot"
 	"github.com/samber/lo"
 )
 
 var (
-	skipFstypes  = []string{"proc", "sysfs", "tmpfs", "devpts", "cgroup2", "cgroup", "mqueue", "overlay"}
-	skipPrefixes = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
+	skipFSTypes       = []string{"proc", "sysfs", "tmpfs", "devpts", "cgroup2", "cgroup", "mqueue", "overlay"}
+	skipPrefixes      = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
+	persistentVolumes = []string{"/mise", "/root"}
 )
 
-const miseShimsDir = "/mise/shims"
-
-var toolNames = []string{
-	"bash", "git", "jujutsu", "mise",
-	"python3", "pip3",
-	"rg", "make", "jq", "curl",
-}
-
-var toolCommands = map[string]string{
+var preInstalled = map[string]string{
 	"bash":    "bash --version | head -1 | cut -d' ' -f4",
 	"git":     "git --version | cut -d' ' -f3",
 	"jujutsu": "jj version",
@@ -38,7 +31,13 @@ var toolCommands = map[string]string{
 	"rg":      "rg --version | head -1 | cut -d' ' -f2",
 	"make":    "make --version | head -1 | cut -d' ' -f3",
 	"jq":      "jq --version",
-	"curl":    "curl --version | head -1",
+	"curl":    "curl --version | head -1 | cut -d' ' -f1-2",
+}
+
+type mount struct {
+	mountpoint string
+	ro         bool
+	persistent bool
 }
 
 func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -52,7 +51,7 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 	disk := gather("df -h / | awk 'NR==2{print $4\" free of \"$2}'")
 	path := os.Getenv("PATH")
 
-	var mounts []string
+	var mounts []mount
 	file, err := os.Open("/proc/mounts")
 	if err != nil {
 		slog.Error("failed to read mounts", "err", err)
@@ -64,52 +63,21 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		}
 	}
 
-	tools := make(map[string]string, len(toolNames))
-	for _, name := range toolNames {
-		v := gather(toolCommands[name])
+	versions := make(map[string]string, len(preInstalled))
+	for name, cmd := range preInstalled {
+		v := gather(cmd)
 		if v == "" {
 			v = "-"
 		}
-		tools[name] = v
+		versions[name] = v
 	}
 
-	miseShims := discoverMiseShims()
+	detected := pathsnapshot.Diff()
 
-	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, path, h.cfg.Timeout.String(), h.version, mounts, tools, miseShims)), nil
+	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, path, h.cfg.Timeout.String(), h.version, mounts, versions, detected)), nil
 }
 
-// discoverMiseShims returns executable filenames in miseShimsDir, sorted, skipping
-// non-executable files and wrapper scripts (.cmd, .js).
-func discoverMiseShims() []string {
-	entries, err := os.ReadDir(miseShimsDir)
-	if err != nil {
-		return nil
-	}
-
-	var shims []string
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		name := entry.Name()
-		if strings.Contains(name, ".") {
-			continue
-		}
-		info, err := entry.Info()
-		if err != nil {
-			continue
-		}
-		if info.Mode()&0o111 == 0 {
-			continue
-		}
-		shims = append(shims, filepath.Base(name))
-	}
-
-	sort.Strings(shims)
-	return shims
-}
-
-func formatPlainTextContext(osName, arch, disk, path, timeout, version string, projects []string, tools map[string]string, miseShims []string) string {
+func formatPlainTextContext(osName, arch, disk, path, timeout, version string, mounts []mount, versions map[string]string, detected []pathsnapshot.Entry) string {
 	b := strings.Builder{}
 
 	b.WriteString("<metadata>\n")
@@ -120,26 +88,36 @@ func formatPlainTextContext(osName, arch, disk, path, timeout, version string, p
 	b.WriteString("shell_exec_timeout: " + timeout + "\n")
 	b.WriteString("version: " + version + "\n")
 
-	b.WriteString("projects:\n")
-	for _, p := range projects {
-		b.WriteString("  " + p + "\n")
+	b.WriteString("volumes:\n")
+	for _, m := range mounts {
+		switch {
+		case m.persistent:
+			b.WriteString("  " + m.mountpoint + " persistent\n")
+		case m.ro:
+			b.WriteString("  " + m.mountpoint + " ro\n")
+		default:
+			b.WriteString("  " + m.mountpoint + " rw\n")
+		}
 	}
+	b.WriteString("note: container is ephemeral — only volumes above persist across sessions; install to /root/bin to persist across sessions\n")
 
-	b.WriteString("tools:\n")
+	b.WriteString("installed:\n")
 	maxLen := 0
-	for _, name := range toolNames {
+
+	for name := range preInstalled {
 		if len(name) > maxLen {
 			maxLen = len(name)
 		}
 	}
-	for _, name := range toolNames {
-		b.WriteString("  " + fmt.Sprintf("%-*s", maxLen+1, name+":") + " " + tools[name] + "\n")
+
+	for name := range preInstalled {
+		b.WriteString("  " + fmt.Sprintf("%-*s", maxLen+1, name+":") + " " + versions[name] + "\n")
 	}
 
-	if len(miseShims) > 0 {
-		b.WriteString("mise shims:\n")
-		for _, s := range miseShims {
-			b.WriteString("  " + s + "\n")
+	if len(detected) > 0 {
+		b.WriteString("auto-detected in path:\n")
+		for _, e := range detected {
+			b.WriteString("  " + e.Name + " " + e.Path + "\n")
 		}
 	}
 
@@ -148,18 +126,19 @@ func formatPlainTextContext(osName, arch, disk, path, timeout, version string, p
 	return b.String()
 }
 
-func parseMounts(r io.Reader) ([]string, error) {
-	var candidates []string
+func parseMounts(r io.Reader) ([]mount, error) {
+	var mounts []mount
 	scanner := bufio.NewScanner(r)
+
 	for scanner.Scan() {
 		fields := strings.Fields(scanner.Text())
-		if len(fields) < 3 {
+		if len(fields) < 4 {
 			continue
 		}
 
-		mountpoint, fstype := fields[1], fields[2]
+		mountpoint, fstype, options := fields[1], fields[2], fields[3]
 
-		if mountpoint == "/" || lo.Contains(skipFstypes, fstype) {
+		if mountpoint == "/" || lo.Contains(skipFSTypes, fstype) {
 			continue
 		}
 
@@ -170,28 +149,23 @@ func parseMounts(r io.Reader) ([]string, error) {
 			continue
 		}
 
-		candidates = append(candidates, mountpoint)
+		ro := strings.HasPrefix(options, "ro,") || options == "ro"
+		persistent := lo.Contains(persistentVolumes, mountpoint)
+
+		mounts = append(mounts, mount{
+			mountpoint: mountpoint,
+			ro:         ro,
+			persistent: persistent,
+		})
 	}
 
-	scanErr := scanner.Err()
-	if scanErr != nil {
-		return nil, scanErr
+	if err := scanner.Err(); err != nil {
+		return nil, err
 	}
 
-	sort.Slice(candidates, func(i, j int) bool {
-		return len(candidates[i]) < len(candidates[j])
+	sort.Slice(mounts, func(i, j int) bool {
+		return mounts[i].mountpoint < mounts[j].mountpoint
 	})
 
-	kept := lo.Reduce(candidates, func(acc []string, candidate string, _ int) []string {
-		isChild := lo.SomeBy(acc, func(k string) bool {
-			return strings.HasPrefix(candidate, k+"/")
-		})
-		if isChild {
-			return acc
-		}
-		return append(acc, candidate)
-	}, []string{})
-
-	sort.Strings(kept)
-	return kept, nil
+	return mounts, nil
 }

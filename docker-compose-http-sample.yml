@@ -1,4 +1,8 @@
 # this file has example values
+volumes:
+  jail-mcp-mise:
+  jail-mcp-root:
+
 services:
   jail-mcp:
     build: .
@@ -13,6 +17,9 @@ services:
       JAIL_MCP_TIMEOUT: 15s
       JAIL_MCP_BACKGROUND_TIMEOUT: 5m
     volumes:
+      # persistent state: mise installs and shims, Go cache, path snapshot
+      - jail-mcp-mise:/mise
+      - jail-mcp-root:/root
       # projects
       - /Users/you/helloworld:/projects/helloworld
       # :ro adds a path as read-only, must come after the parent path
