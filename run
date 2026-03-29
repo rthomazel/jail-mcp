@@ -48,26 +48,34 @@ up)
 down)
   docker compose -f docker-compose-http.yml down -d
   ;;
-# -- print a prompt for updating the changelog
+# -- print a prompt for updating the changelog; requires: <pr_url> <version>
 prompt:changelog)
-  cat <<'EOF'
+  pr_url="${2:-}"
+  version="${3:-}"
+
+  if [[ -z "$pr_url" || -z "$version" ]]; then
+    echo "usage: ./run prompt:changelog <pr_url> <version>" >&2
+    exit 1
+  fi
+
+  cat <<EOF
 Update CHANGELOG.md for a new release.
 
-- New version: {version} # operator: add value here
-- PR URL: {pr_url} # operator: add value here
+- New version: $version
+- PR URL: $pr_url
 - Base branch: main
 
 Steps:
 
-1. Run `git log main..HEAD --format="%h %s"` to get all commits since main.
+1. Run \`git log main..HEAD --format="%h %s"\` to get all commits since main.
 2. Read CHANGELOG.md to match the existing format.
 3. Group commits by their conventional commit type (feat, fix, refactor, build, docs, misc, etc.) — one ### block per type.
 4. For each commit, write a bullet in the format:
-   - [`{hash}`](`{repo_url}/commit/{hash}`) **(scope)** message — short technical description expanding on what changed and why.
+   - [\`{hash}\`](\`{repo_url}/commit/{hash}\`) **(scope)** message — short technical description expanding on what changed and why.
 5. Omit the scope prefix if the commit has none.
 6. Prepend the new entry to the top of the changelog, below the # CHANGELOG heading, without modifying any existing entries.
 
-The entry heading should follow the pattern of existing entries: ## [{version}]({pr_url}) {type}: {short title}.
+The entry heading should follow the pattern of existing entries: ## [$version]($pr_url) {type}: {short title}.
 EOF
   ;;
 help | *)

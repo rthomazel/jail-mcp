@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [0.3](https://github.com/rthomazel/jail-mcp/pull/6) feat: volumes, multi-command, and context improvements
+
+### feat
+
+- [`e7c0c03`](https://github.com/rthomazel/jail-mcp/commit/e7c0c03) **(internal/pathsnapshot)** auto-detect binaries in path — context now diffs PATH entries and reports tools discovered at runtime, so agents see what's available without manual inspection.
+- [`f0c3ede`](https://github.com/rthomazel/jail-mcp/commit/f0c3ede) **(handlers)** multiple commands in exec and background — `exec_sync` and `exec_background` now accept an array of commands, running each in sequence and returning per-command results.
+- [`e77006a`](https://github.com/rthomazel/jail-mcp/commit/e77006a) **(handlers)** multiple jobs in status — `status` accepts an array of job IDs and returns results for all of them in one call.
+- [`eab80dc`](https://github.com/rthomazel/jail-mcp/commit/eab80dc) **(docker)** volumes — compose configuration gains named volume support for persisting data across container restarts.
+
+### refactor
+
+- [`00226b6`](https://github.com/rthomazel/jail-mcp/commit/00226b6) **(handlers/context)** remove mise shims — dedicated mise shims block removed from context output; shims are already covered by the auto-detected path entries.
+- [`a2a9ca1`](https://github.com/rthomazel/jail-mcp/commit/a2a9ca1) **(handlers/context)** show persistent volumes — volumes backed by persistent mounts are now labeled `persistent` in context output instead of `rw`.
+
+### docs
+
+- [`64c9e5e`](https://github.com/rthomazel/jail-mcp/commit/64c9e5e) update volume persistence instructions — clarified how to persist tools and files across ephemeral container sessions.
+
+### misc
+
+- [`984c37b`](https://github.com/rthomazel/jail-mcp/commit/984c37b) short curl version — curl version string trimmed to `curl x.x.x` to reduce noise in context output.
+- [`cb0e14b`](https://github.com/rthomazel/jail-mcp/commit/cb0e14b) **(docker)** update volume docs.
+- [`8346e8b`](https://github.com/rthomazel/jail-mcp/commit/8346e8b) **(run)** remove publish command.
+
+
 ## [0.2.2](https://github.com/rthomazel/jail-mcp/pull/5) feat: hidden paths & context improvements
 
 ### feat
