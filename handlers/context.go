@@ -7,7 +7,6 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -21,8 +20,6 @@ var (
 	skipPrefixes      = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
 	persistentVolumes = []string{"/mise", "/root"}
 )
-
-const miseShimsDir = "/mise/shims"
 
 var preInstalled = map[string]string{
 	"bash":    "bash --version | head -1 | cut -d' ' -f4",
@@ -75,44 +72,12 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		versions[name] = v
 	}
 
-	miseShims := discoverMiseShims()
 	detected := pathsnapshot.Diff()
 
-	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, path, h.cfg.Timeout.String(), h.version, mounts, versions, miseShims, detected)), nil
+	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, path, h.cfg.Timeout.String(), h.version, mounts, versions, detected)), nil
 }
 
-// discoverMiseShims returns executable filenames in miseShimsDir, sorted, skipping
-// non-executable files and wrapper scripts (.cmd, .js).
-func discoverMiseShims() []string {
-	entries, err := os.ReadDir(miseShimsDir)
-	if err != nil {
-		return nil
-	}
-
-	var shims []string
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		name := entry.Name()
-		if strings.Contains(name, ".") {
-			continue
-		}
-		info, err := entry.Info()
-		if err != nil {
-			continue
-		}
-		if info.Mode()&0o111 == 0 {
-			continue
-		}
-		shims = append(shims, filepath.Base(name))
-	}
-
-	sort.Strings(shims)
-	return shims
-}
-
-func formatPlainTextContext(osName, arch, disk, path, timeout, version string, mounts []mount, versions map[string]string, miseShims []string, detected []pathsnapshot.Entry) string {
+func formatPlainTextContext(osName, arch, disk, path, timeout, version string, mounts []mount, versions map[string]string, detected []pathsnapshot.Entry) string {
 	b := strings.Builder{}
 
 	b.WriteString("<metadata>\n")
@@ -147,13 +112,6 @@ func formatPlainTextContext(osName, arch, disk, path, timeout, version string, m
 
 	for name := range preInstalled {
 		b.WriteString("  " + fmt.Sprintf("%-*s", maxLen+1, name+":") + " " + versions[name] + "\n")
-	}
-
-	if len(miseShims) > 0 {
-		b.WriteString("mise shims:\n")
-		for _, s := range miseShims {
-			b.WriteString("  " + s + "\n")
-		}
 	}
 
 	if len(detected) > 0 {
