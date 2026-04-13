@@ -38,7 +38,10 @@ build:docker)
   commit="$(git rev-parse --short HEAD)"
   date="$(date +%Y.%m.%d.%H:%M)"
 
-  docker compose -f docker-compose.yml build --build-arg VERSION="${version}_${commit}_$date"
+  docker buildx build --platform linux/amd64,linux/arm64 \
+    --build-arg VERSION="${version}_${commit}_$date" \
+    -t ghcr.io/rthomazel/jail-mcp:latest \
+    --load .
   ;;
 # -- bring services UP
 up)
