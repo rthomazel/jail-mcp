@@ -24,7 +24,6 @@
 - [`cb0e14b`](https://github.com/rthomazel/jail-mcp/commit/cb0e14b) **(docker)** update volume docs.
 - [`8346e8b`](https://github.com/rthomazel/jail-mcp/commit/8346e8b) **(run)** remove publish command.
 
-
 ## [0.2.2](https://github.com/rthomazel/jail-mcp/pull/5) feat: hidden paths & context improvements
 
 ### feat

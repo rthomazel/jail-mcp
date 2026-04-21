@@ -50,10 +50,10 @@ Containers are ephemeral — `docker compose run --rm` creates a new container e
 
 Only named volumes persist across sessions:
 
-| volume           | mountpoint | contents                                      |
-| ---------------- | ---------- | --------------------------------------------- |
-| `jail-mcp-mise`  | `/mise`    | mise installs, shims                          |
-| `jail-mcp-root`  | `/root`    | Go module cache, path snapshot, ad-hoc tools  |
+| volume          | mountpoint | contents                                     |
+| --------------- | ---------- | -------------------------------------------- |
+| `jail-mcp-mise` | `/mise`    | mise installs, shims                         |
+| `jail-mcp-root` | `/root`    | Go module cache, path snapshot, ad-hoc tools |
 
 Volumes are deleted only by `docker volume rm` or `docker compose down -v`.
 
