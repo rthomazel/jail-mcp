@@ -52,7 +52,7 @@ ENV MISE_DATA_DIR=/mise
 ENV MISE_CONFIG_DIR=/mise
 ENV PATH="/mise/shims:$PATH"
 
-RUN pip install mcpo --break-system-packages
+RUN pip install mcpo mcp-proxy --break-system-packages
 
 COPY --from=builder /build/jail-mcp /usr/local/bin/jail-mcp
 COPY ./bin/jailmcphttp /usr/local/bin/jailmcphttp
