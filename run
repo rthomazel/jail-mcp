@@ -28,6 +28,10 @@ test)
 format)
   go tool gofumpt -l -w .
   ;;
+# -- run prettier on non-Go files: json, yaml, md
+format:others)
+  prettier --write .
+  ;;
 # -- build local binary to bin/server
 build)
   go build -o bin/server main.go

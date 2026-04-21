@@ -21,7 +21,6 @@ MCP server providing shell access to clients, jailed in a container.
 - 2 pull image
 - 3 configure clients
 
-
 **1. Configure container**
 
 Two sample compose files are provided depending on your client:
