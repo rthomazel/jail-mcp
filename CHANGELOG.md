@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.3.3](https://github.com/rthomazel/jail-mcp/pull/9) feat: configurable home and mise directories
+
+### feat
+
+- [`3dfdb19`](https://github.com/rthomazel/jail-mcp/commit/3dfdb19) **(config)** `JAIL_MCP_HOME` — new env variable controlling the base directory for the path snapshot file and the persistent-install note in context output. Defaults to `$HOME` via `os.UserHomeDir()`, so root users are unaffected. Non-root users or custom setups can override without touching the image.
+- [`546d8f3`](https://github.com/rthomazel/jail-mcp/commit/546d8f3) **(config)** `JAIL_MCP_MISE_DIR` — new env variable for the mise mount directory. Defaults to `/mise`. Used to derive the shims path prepended to `$PATH` on startup and to identify the mise volume as persistent in context output. `snapshotFile` restored as a package-level const in `pathsnapshot`.
+
 ## [0.3.2](https://github.com/rthomazel/jail-mcp/pull/8) feat: SSE mode with mcp-proxy wrapper
 
 ### feat
