@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## [0.3.2](https://github.com/rthomazel/jail-mcp/pull/8) feat: SSE mode with mcp-proxy wrapper
+
+### feat
+
+- [`07feac8`](https://github.com/rthomazel/jail-mcp/commit/07feac8) **(docker)** mcp-proxy transport — `mcp-proxy` added to the image alongside `mcpo`. `bin/jailmcphttp` now dispatches across three modes via `JAIL_MCP_TRANSPORT`: `mcpo` (OpenAI-compatible REST), `mcp-proxy` (native MCP/SSE), and stdio (default). `JAIL_MCP_HTTP=true` remains supported as a legacy alias for `mcpo`. sample compose file updated to default to `mcp-proxy`.
+
+### docs
+
+- [`07feac8`](https://github.com/rthomazel/jail-mcp/commit/07feac8) `JAIL_MCP_TRANSPORT` added to config reference — documents the new variable and its accepted values. README updated with setup overview and refined known client bug instructions.
+
+### misc
+
+- [`07feac8`](https://github.com/rthomazel/jail-mcp/commit/07feac8) **(run)** `format:others` command — runs prettier on non-Go files (JSON, YAML, Markdown).
+
+## [0.3.1](https://github.com/rthomazel/jail-mcp/pull/7) fix: arm64 release support
+
+### fix
+
+- [`79b82fa`](https://github.com/rthomazel/jail-mcp/commit/79b82fa) **(workflows)** arm64 release — release workflow gains `docker/setup-buildx-action` and `platforms: linux/amd64,linux/arm64`. local `build:docker` command updated to use `docker buildx build` with the same platform flags.
+
 ## [0.3](https://github.com/rthomazel/jail-mcp/pull/6) feat: volumes, multi-command, and context improvements
 
 ### feat
