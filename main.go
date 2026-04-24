@@ -57,7 +57,7 @@ func run() error {
 		}
 	}()
 
-	pathsnapshot.Diff()
+	pathsnapshot.Diff(cfg.Home)
 
 	slog.Info("jail-mcp starting", "version", version, "timeout", cfg.Timeout, "background_timeout", cfg.BackgroundTimeout)
 

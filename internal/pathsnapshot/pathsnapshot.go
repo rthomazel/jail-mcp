@@ -11,8 +11,6 @@ import (
 	"strings"
 )
 
-const snapshotPath = "/root/.jail-mcp-path-snapshot"
-
 // Entry is a single executable discovered in PATH.
 type Entry struct {
 	Name string
@@ -22,16 +20,18 @@ type Entry struct {
 // Diff rescans PATH and returns executables not present in the snapshot.
 // If the snapshot does not exist it is created and nil is returned —
 // nothing to diff on first run.
-func Diff() []Entry {
+// home is the base directory for the snapshot file (e.g. cfg.Home).
+func Diff(home string) []Entry {
+	snapshotPath := filepath.Join(home, ".jail-mcp-path-snapshot")
 	current := scan()
-	snapshot, err := load()
+	snapshot, err := load(snapshotPath)
 	if err != nil {
 		if !errors.Is(err, fs.ErrNotExist) {
 			slog.Warn("path snapshot diff", "err", err.Error())
 			return nil
 		}
 
-		_ = write(current)
+		_ = write(current, snapshotPath)
 		return nil
 	}
 
@@ -82,7 +82,7 @@ func scan() []Entry {
 }
 
 // write atomically writes entries to snapshotPath as TSV (name\tpath).
-func write(entries []Entry) error {
+func write(entries []Entry, snapshotPath string) error {
 	tmp := snapshotPath + ".tmp"
 	f, err := os.Create(tmp)
 	if err != nil {
@@ -107,7 +107,7 @@ func write(entries []Entry) error {
 
 // load reads snapshotPath and returns the stored entries.
 // Returns fs.ErrNotExist if the file has not been written yet.
-func load() ([]Entry, error) {
+func load(snapshotPath string) ([]Entry, error) {
 	f, err := os.Open(snapshotPath)
 	if err != nil {
 		return nil, err

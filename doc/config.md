@@ -2,11 +2,12 @@
 
 Config is loaded from environment variables only — no flags, no config files.
 
-| variable                      | default   | description                                                                                                                                        |
-| ----------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `JAIL_MCP_TIMEOUT`            | `15s`     | Timeout for `exec_sync` commands                                                                                                                   |
-| `JAIL_MCP_BACKGROUND_TIMEOUT` | `5m`      | Timeout for `exec_background` / `setup` jobs                                                                                                       |
-| `JAIL_MCP_TRANSPORT`          | _(unset)_ | HTTP wrapper: `mcpo` (OpenAI-compatible REST) or `mcp-proxy` (native MCP/SSE). `JAIL_MCP_HTTP=true` is equivalent to `mcpo` and remains supported. |
+| variable                      | default   | description                                                                                                                                             |
+| ----------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `JAIL_MCP_TIMEOUT`            | `15s`     | Timeout for `exec_sync` commands                                                                                                                        |
+| `JAIL_MCP_BACKGROUND_TIMEOUT` | `5m`      | Timeout for `exec_background` / `setup` jobs                                                                                                            |
+| `JAIL_MCP_TRANSPORT`          | _(unset)_ | HTTP wrapper: `mcpo` (OpenAI-compatible REST) or `mcp-proxy` (native MCP/SSE). `JAIL_MCP_HTTP=true` is equivalent to `mcpo` and remains supported.      |
+| `JAIL_MCP_HOME`               | `$HOME`   | Base directory for the path snapshot file and the persistent-install note. Override when running as a non-root user without access to the default home. |
 
 Values must be valid Go duration strings (e.g. `30s`, `2m`, `1h`).
 
@@ -15,7 +16,7 @@ Set these in the `environment:` section of `docker-compose.yml`.
 ## path snapshot
 
 On startup the server scans all directories in `$PATH` and writes a snapshot of
-the discovered executables to `/root/.jail-mcp-path-snapshot` (TSV: `name\tpath`,
+the discovered executables to `$JAIL_MCP_HOME/.jail-mcp-path-snapshot` (TSV: `name\tpath`,
 one entry per line, sorted). This file is created once and never updated.
 
 On each `context` call the server rescans `$PATH` and diffs against the snapshot.
