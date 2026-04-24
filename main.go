@@ -15,8 +15,6 @@ import (
 	"github.com/rthomazel/jail-mcp/internal/pathsnapshot"
 )
 
-const miseShims = "/mise/shims"
-
 // version is set at build time via -ldflags "-X main.version=..."
 var version = "local"
 
@@ -28,7 +26,13 @@ func main() {
 }
 
 func run() error {
-	homeBin := os.Getenv("HOME") + "/bin"
+	cfg, err := internal.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("config: %w", err)
+	}
+
+	miseShims := cfg.MiseDir + "/shims"
+	homeBin := cfg.Home + "/bin"
 	_ = os.MkdirAll(homeBin, 0o755)
 
 	current := os.Getenv("PATH")
@@ -39,11 +43,6 @@ func run() error {
 		current = homeBin + ":" + current
 	}
 	_ = os.Setenv("PATH", current)
-
-	cfg, err := internal.LoadConfig()
-	if err != nil {
-		return fmt.Errorf("config: %w", err)
-	}
 
 	slog.SetDefault(slog.New(slog.NewTextHandler(
 		os.Stderr,

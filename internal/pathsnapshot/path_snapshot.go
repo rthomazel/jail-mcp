@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+const snapshotFile = ".jail-mcp-path-snapshot"
+
 // Entry is a single executable discovered in PATH.
 type Entry struct {
 	Name string
@@ -22,7 +24,7 @@ type Entry struct {
 // nothing to diff on first run.
 // home is the base directory for the snapshot file (e.g. cfg.Home).
 func Diff(home string) []Entry {
-	snapshotPath := filepath.Join(home, ".jail-mcp-path-snapshot")
+	snapshotPath := filepath.Join(home, snapshotFile)
 	current := scan()
 	snapshot, err := load(snapshotPath)
 	if err != nil {

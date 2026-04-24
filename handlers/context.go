@@ -56,7 +56,7 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		slog.Error("failed to read mounts", "err", err)
 	} else {
 		defer func() { _ = file.Close() }()
-		mounts, err = parseMounts(file, h.cfg.Home)
+		mounts, err = parseMounts(file, h.cfg.Home, h.cfg.MiseDir)
 		if err != nil {
 			slog.Error("failed to parse mounts", "err", err)
 		}
@@ -125,7 +125,7 @@ func formatPlainTextContext(osName, arch, disk, path, timeout, version, home str
 	return b.String()
 }
 
-func parseMounts(r io.Reader, home string) ([]mount, error) {
+func parseMounts(r io.Reader, home, miseDir string) ([]mount, error) {
 	var mounts []mount
 	scanner := bufio.NewScanner(r)
 
@@ -149,7 +149,7 @@ func parseMounts(r io.Reader, home string) ([]mount, error) {
 		}
 
 		ro := strings.HasPrefix(options, "ro,") || options == "ro"
-		persistent := lo.Contains([]string{"/mise", home}, mountpoint)
+		persistent := lo.Contains([]string{miseDir, home}, mountpoint)
 
 		mounts = append(mounts, mount{
 			mountpoint: mountpoint,
