@@ -69,7 +69,7 @@ tmpfs /tmp tmpfs rw 0 0
 
 	for _, u := range useCases {
 		t.Run(u.name, func(t *testing.T) {
-			got, err := parseMounts(strings.NewReader(u.input))
+			got, err := parseMounts(strings.NewReader(u.input), "/root", "/mise")
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}

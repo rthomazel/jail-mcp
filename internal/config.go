@@ -9,6 +9,8 @@ import (
 type Config struct {
 	Timeout           time.Duration
 	BackgroundTimeout time.Duration
+	Home              string
+	MiseDir           string
 }
 
 var defaults = Config{
@@ -17,9 +19,25 @@ var defaults = Config{
 }
 
 func LoadConfig() (*Config, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("home directory: %w", err)
+	}
+
+	if raw := os.Getenv("JAIL_MCP_HOME"); raw != "" {
+		home = raw
+	}
+
+	miseDir := "/mise"
+	if raw := os.Getenv("JAIL_MCP_MISE_DIR"); raw != "" {
+		miseDir = raw
+	}
+
 	cfg := &Config{
 		Timeout:           defaults.Timeout,
 		BackgroundTimeout: defaults.BackgroundTimeout,
+		Home:              home,
+		MiseDir:           miseDir,
 	}
 
 	if raw := os.Getenv("JAIL_MCP_TIMEOUT"); raw != "" {

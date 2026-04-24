@@ -16,9 +16,8 @@ import (
 )
 
 var (
-	skipFSTypes       = []string{"proc", "sysfs", "tmpfs", "devpts", "cgroup2", "cgroup", "mqueue", "overlay"}
-	skipPrefixes      = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
-	persistentVolumes = []string{"/mise", "/root"}
+	skipFSTypes  = []string{"proc", "sysfs", "tmpfs", "devpts", "cgroup2", "cgroup", "mqueue", "overlay"}
+	skipPrefixes = []string{"/proc", "/sys", "/dev", "/run", "/etc"}
 )
 
 var preInstalled = map[string]string{
@@ -57,7 +56,7 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		slog.Error("failed to read mounts", "err", err)
 	} else {
 		defer func() { _ = file.Close() }()
-		mounts, err = parseMounts(file)
+		mounts, err = parseMounts(file, h.cfg.Home, h.cfg.MiseDir)
 		if err != nil {
 			slog.Error("failed to parse mounts", "err", err)
 		}
@@ -72,12 +71,12 @@ func (h *Handler) HandleContext(ctx context.Context, _ mcp.CallToolRequest) (*mc
 		versions[name] = v
 	}
 
-	detected := pathsnapshot.Diff()
+	detected := pathsnapshot.Diff(h.cfg.Home)
 
-	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, path, h.cfg.Timeout.String(), h.version, mounts, versions, detected)), nil
+	return mcp.NewToolResultText(formatPlainTextContext(osName, arch, disk, path, h.cfg.Timeout.String(), h.version, h.cfg.Home, mounts, versions, detected)), nil
 }
 
-func formatPlainTextContext(osName, arch, disk, path, timeout, version string, mounts []mount, versions map[string]string, detected []pathsnapshot.Entry) string {
+func formatPlainTextContext(osName, arch, disk, path, timeout, version, home string, mounts []mount, versions map[string]string, detected []pathsnapshot.Entry) string {
 	b := strings.Builder{}
 
 	b.WriteString("<metadata>\n")
@@ -99,7 +98,7 @@ func formatPlainTextContext(osName, arch, disk, path, timeout, version string, m
 			b.WriteString("  " + m.mountpoint + " rw\n")
 		}
 	}
-	b.WriteString("note: container is ephemeral — only volumes above persist across sessions; install to /root/bin to persist across sessions\n")
+	b.WriteString("note: container is ephemeral — only volumes above persist across sessions; install to " + home + "/bin to persist across sessions\n")
 
 	b.WriteString("installed:\n")
 	maxLen := 0
@@ -126,7 +125,7 @@ func formatPlainTextContext(osName, arch, disk, path, timeout, version string, m
 	return b.String()
 }
 
-func parseMounts(r io.Reader) ([]mount, error) {
+func parseMounts(r io.Reader, home, miseDir string) ([]mount, error) {
 	var mounts []mount
 	scanner := bufio.NewScanner(r)
 
@@ -150,7 +149,7 @@ func parseMounts(r io.Reader) ([]mount, error) {
 		}
 
 		ro := strings.HasPrefix(options, "ro,") || options == "ro"
-		persistent := lo.Contains(persistentVolumes, mountpoint)
+		persistent := lo.Contains([]string{miseDir, home}, mountpoint)
 
 		mounts = append(mounts, mount{
 			mountpoint: mountpoint,
