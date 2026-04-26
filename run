@@ -11,6 +11,17 @@ trap 'echo fatal: $0:$LINENO >&2' ERR
 # AGENTS: run commands directly, you cannot execute this file. if making changes to this file, run chmod u+x on it.
 cmd="${1:-help}"
 
+build_arch() {
+  version="$(git describe --tags --abbrev=0)"
+  commit="$(git rev-parse --short HEAD)"
+  date="$(date +%Y.%m.%d.%H:%M)"
+
+  docker buildx build --platform "$1" \
+    --build-arg VERSION="${version}_${commit}_$date" \
+    -t ghcr.io/rthomazel/jail-mcp:latest \
+    --load .
+}
+
 case "$cmd" in
 # -- run golangci-lint
 lint)
@@ -33,19 +44,16 @@ format:others)
   prettier --write .
   ;;
 # -- build local binary to bin/server
-build)
+build:go)
   go build -o bin/server main.go
   ;;
-# -- build versioned docker image tagged latest
-build:docker:amd64)
-  version="$(git describe --tags --abbrev=0)"
-  commit="$(git rev-parse --short HEAD)"
-  date="$(date +%Y.%m.%d.%H:%M)"
-
-  docker buildx build --platform linux/amd64 \
-    --build-arg VERSION="${version}_${commit}_$date" \
-    -t ghcr.io/rthomazel/jail-mcp:latest \
-    --load .
+# -- build versioned docker image tagged latest for amd64
+build:amd64)
+  build_arch "linux/amd64"
+  ;;
+# -- build versioned docker image tagged latest for arm64
+build:arm64)
+  build_arch "linux/arm64"
   ;;
 # -- bring services UP
 up)
