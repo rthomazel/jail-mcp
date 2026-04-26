@@ -37,14 +37,12 @@ build)
   go build -o bin/server main.go
   ;;
 # -- build versioned docker image tagged latest
-build:docker)
+build:docker:amd64)
   version="$(git describe --tags --abbrev=0)"
   commit="$(git rev-parse --short HEAD)"
   date="$(date +%Y.%m.%d.%H:%M)"
 
-  docker run --privileged --rm tonistiigi/binfmt --install all
-
-  docker buildx build --platform linux/amd64,linux/arm64 \
+  docker buildx build --platform linux/amd64 \
     --build-arg VERSION="${version}_${commit}_$date" \
     -t ghcr.io/rthomazel/jail-mcp:latest \
     --load .
