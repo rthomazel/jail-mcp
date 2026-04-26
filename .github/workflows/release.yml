@@ -17,6 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.7
 
+      - name: set up qemu
+        uses: docker/setup-qemu-action@v3
+
       - name: set up buildx
         uses: docker/setup-buildx-action@v3
 
