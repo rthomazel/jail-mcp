@@ -42,6 +42,8 @@ build:docker)
   commit="$(git rev-parse --short HEAD)"
   date="$(date +%Y.%m.%d.%H:%M)"
 
+  docker run --privileged --rm tonistiigi/binfmt --install all
+
   docker buildx build --platform linux/amd64,linux/arm64 \
     --build-arg VERSION="${version}_${commit}_$date" \
     -t ghcr.io/rthomazel/jail-mcp:latest \
