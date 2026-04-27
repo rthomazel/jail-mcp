@@ -1,29 +1,22 @@
-# this file has example values
+# this file has example values in the volumes section
 volumes:
   jail-mcp-mise:
   jail-mcp-root:
 
 services:
   jail-mcp:
-    build: .
     container_name: jail-mcp-stdio
     image: ghcr.io/rthomazel/jail-mcp:latest
     stdin_open: true
     tty: false
     environment:
+      # timeout for exec sync commands
       JAIL_MCP_TIMEOUT: 15s
+      # timeout for exec background
       JAIL_MCP_BACKGROUND_TIMEOUT: 5m
     volumes:
       # persistent state: mise installs and shims, Go cache, path snapshot
       - jail-mcp-mise:/mise
       - jail-mcp-root:/root
-      # projects
+      # >>> add projects below here <<<
       - /Users/you/helloworld:/projects/helloworld
-      # :ro adds a path as read-only, must come after the parent path
-      #- /Users/you/helloworld/.git:/projects/helloworld/.git:ro
-      - /Users/you/fizzbuzz:/projects/fizzbuzz
-      #- /Users/you/fizzbuzz/.git:/projects/fizzbuzz/.git:ro
-      # hide a file from the agent (mount /dev/null over it)
-      #- /dev/null:/projects/helloworld/.env
-      # hide a directory from the agent (mount an empty dir over it, must exist on host)
-      #- /tmp/jail-hidden:/projects/helloworld/secrets
