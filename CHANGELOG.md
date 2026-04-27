@@ -5,7 +5,7 @@
 ### fix
 
 - [`5e1a8f5`](https://github.com/rthomazel/jail-mcp/commit/5e1a8f5) **(main)** array `items` schema — all array-typed tool parameters (`commands`, `job_ids`, `paths`) were missing an `items` field in their JSON Schema definition. OpenAI and Google Gemini reject tool schemas without it, returning a 400. Added `mcp.Items` with `{"type": "string"}` to each.
-- [`5e1a8f5`](https://github.com/rthomazel/jail-mcp/commit/5e1a8f5) **(workflows)** arm64 docker build — release workflow was missing `docker/setup-qemu-action` before buildx. Without QEMU binfmt handlers, arm64 images built on amd64 CI hosts failed at the first `RUN` instruction with `exec /bin/sh: no such file or directory`.
+- [`5e1a8f5`](https://github.com/rthomazel/jail-mcp/commit/5e1a8f5) **(workflows)** arm64 docker build — release workflow was missing `docker/setup-qemu-action` before buildx. Without QEMU binfmt handlers, arm64 images built on amd64 CI hosts may fail at the first `RUN` instruction with `exec /bin/sh: no such file or directory`.
 
 ### refactor
 
