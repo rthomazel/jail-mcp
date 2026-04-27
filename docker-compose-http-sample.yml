@@ -25,4 +25,5 @@ services:
       - jail-mcp-mise:/mise
       - jail-mcp-root:/root
       # >>> add projects below here <<<
+      # host machine path : container path
       - /Users/you/helloworld:/projects/helloworld
