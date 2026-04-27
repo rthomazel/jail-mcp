@@ -131,7 +131,7 @@ docker compose -f docker-compose-http.yml up -d
 
 Then add `http://localhost:8001` as a tool server in your client.
 
-The HTTP mode is enabled by setting `JAIL_MCP_HTTP=true` in the container environment, which is pre-configured in `docker-compose-http-sample.yml`.
+The HTTP transport is configured via `JAIL_MCP_TRANSPORT` in the container environment — `mcpo` for OpenAI-compatible REST (Open WebUI) or `mcp-proxy` for native MCP/SSE (LibreChat, Claude Desktop). See `docker-compose-http-sample.yml` for an example.
 
 #### Known (client) Bugs
 

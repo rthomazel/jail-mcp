@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [0.3.4](https://github.com/rthomazel/jail-mcp/pull/10) fix: array items schema and arm64 build
+
+### fix
+
+- [`5e1a8f5`](https://github.com/rthomazel/jail-mcp/commit/5e1a8f5) **(main)** array `items` schema — all array-typed tool parameters (`commands`, `job_ids`, `paths`) were missing an `items` field in their JSON Schema definition. OpenAI and Google Gemini reject tool schemas without it, returning a 400. Added `mcp.Items` with `{"type": "string"}` to each.
+- [`5e1a8f5`](https://github.com/rthomazel/jail-mcp/commit/5e1a8f5) **(workflows)** arm64 docker build — release workflow was missing `docker/setup-qemu-action` before buildx. Without QEMU binfmt handlers, arm64 images built on amd64 CI hosts failed at the first `RUN` instruction with `exec /bin/sh: no such file or directory`.
+
+### refactor
+
+- [`5e1a8f5`](https://github.com/rthomazel/jail-mcp/commit/5e1a8f5) **(run)** build commands — `build` renamed to `build:go`; `build:docker` removed and replaced with `build:amd64` and `build:arm64` for explicit single-arch local builds. Shared logic extracted to a `build_arch()` helper.
+
 ## [0.3.3](https://github.com/rthomazel/jail-mcp/pull/9) feat: configurable home and mise directories
 
 ### feat
