@@ -11,16 +11,18 @@ The following tools are exposed to agents
 | context         | project and environment discovery |
 | exec sync       | run foreground commands           |
 | exec background | run background jobs               |
-| status          | pool job status                   |
+| status          | poll job status                   |
 | setup           | install project dependencies      |
 
 ## Configuration
 
 ### Overview
 
-- 1 compose file with projects as volumes
-- 2 pull image
+- 1 pull image
+- 2 compose file with projects as volumes
 - 3 configure clients
+- 4 run setup to install project dependencies
+- 5 add an agent prompt
 
 ### **1. Pull image**
 
@@ -113,7 +115,7 @@ Restart claude desktop.
 Runs a persistent container exposing an HTTP MCP endpoint on port 8001.
 
 ```bash
-docker compose -f docker-compose-http.yml up -d
+docker compose -f docker-compose-http-sample.yml up -d
 ```
 
 Then add `http://localhost:8001` as an MCP tool in your client.
@@ -187,10 +189,10 @@ Editing files via jail:
 
 python3 << 'PYEOF'
 with open('/projects/server/path/to/file', 'r') as f:
-content = f.read()
+    content = f.read()
 content = content.replace('old', 'new')
 with open('/projects/server/path/to/file', 'w') as f:
-f.write(content)
+    f.write(content)
 print('ok')
 PYEOF
 ```

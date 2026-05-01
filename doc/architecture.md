@@ -42,7 +42,7 @@ Config is env-var only. See [config.md](config.md).
 - Plain text responses over JSON — more readable for humans inspecting output; `<metadata>`, `<stdout>`, `<stderr>` XML tags prevent content/metadata collision
 - `/mise/shims` is prepended to `PATH` at startup in `main.go` so all subprocesses inherit mise-managed tools without requiring shell init files
 - `slog.SetDefault` at startup — no logger threaded through the codebase
-- `internal/` for everything except `main.go`
+- `internal/` for config; `handlers/` is a top-level package (not internal) so its types remain accessible if needed
 
 ## persistence
 
