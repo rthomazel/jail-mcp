@@ -1,5 +1,35 @@
 # CHANGELOG
 
+<!--
+  FORMAT GUIDE (for agents and humans)
+
+  Entry heading:
+    ## [version](PR URL) type: brief title
+    - PR URL: run `git log --oneline` and look for "Merge pull request #N" or "(#N)" in the
+      merge commit message, then use https://github.com/rthomazel/jail-mcp/pull/N
+    - type follows conventional commits:
+      build | ci | docs | feat | fix | misc | perf | refactor | revert | style | test
+
+  Section headings (only include sections that have entries):
+    ### build | ci | docs | feat | fix | misc | perf | refactor | revert | style | test
+
+  Bullets:
+    - [`shortHash`](https://github.com/rthomazel/jail-mcp/commit/shortHash) **(scope)** short label — longer description.
+    - scope is the file, package, or area changed e.g. (config), (bin/setup), (workflows).
+    - Em dash (—) separates the short label from the explanation.
+-->
+
+## [0.3.5] feat: signed commits
+
+### feat
+
+- [`ab4e457`](https://github.com/rthomazel/jail-mcp/commit/ab4e457) **(bin/setup)** GPG signing — `setup_gpg_signing` imports the key from `$GPG_PRIVATE_KEY` (base64-encoded), configures `commit.gpgsign`, `user.signingkey`, and optionally wraps `gpg` with a passphrase for non-interactive signing.
+- [`a584364`](https://github.com/rthomazel/jail-mcp/commit/a584364) **(bin/jailmcphttp)** `--pass-environment` — mcp-proxy now forwards its full environment to the jail-mcp subprocess, allowing secrets promoted by the entrypoint to reach agent-run scripts.
+
+### misc
+
+- [`4828461`](https://github.com/rthomazel/jail-mcp/commit/4828461) **(bin/setup)** removed GITHUB_TOKEN / toolchain / prettier logic — jail-mcp has no private dependencies, so the agent/human branch split is unnecessary. setup now only configures GPG signing.
+
 ## [0.3.4](https://github.com/rthomazel/jail-mcp/pull/10) fix: array items schema and arm64 build
 
 ### fix
