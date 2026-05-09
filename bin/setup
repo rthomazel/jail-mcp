@@ -4,14 +4,8 @@ set -euo pipefail
 shopt -s globstar
 trap 'echo error: line $LINENO >&2' ERR
 # AGENTS: run bin/setup at session start if not already done — it is idempotent.
-# See the notes at the bottom of this file for known environment issues.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_FILE="$SCRIPT_DIR/../.env"
-
-is_agent() {
-  [[ -n "${GITHUB_TOKEN:-}" ]]
-}
 
 # Install mise if missing, then install Go+Node from .tool-versions and activate shims.
 install_toolchain() {
@@ -22,49 +16,6 @@ install_toolchain() {
   mise install
   export PATH="$HOME/.local/share/mise/shims:$PATH"
 }
-
-# Create .env from defaults if not present
-if [[ ! -f "$ENV_FILE" ]]; then
-  cp "$SCRIPT_DIR/../.env-default" "$ENV_FILE"
-fi
-
-# Source .env to pick up GITHUB_TOKEN if not already injected (jail agent case)
-if [[ -z "${GITHUB_TOKEN:-}" && -f "$ENV_FILE" ]]; then
-  # shellcheck disable=SC1090
-  . "$ENV_FILE"
-fi
-
-if is_agent; then
-  if [[ -z "${GITHUB_TOKEN:-}" ]]; then
-    echo "error: GITHUB_TOKEN not set in agent environment" >&2
-    exit 1
-  fi
-
-  install_toolchain
-
-  if ! grep -q '^GITHUB_TOKEN=.' "$ENV_FILE"; then
-    sed -i "s|^GITHUB_TOKEN=$|GITHUB_TOKEN=${GITHUB_TOKEN}|" "$ENV_FILE"
-  fi
-  git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/eleanorhealth".insteadOf "https://github.com/eleanorhealth"
-
-  if ! command -v prettier &>/dev/null; then
-    npm install -g prettier || echo "npm: prettier install failed" >&2
-  fi
-else
-  # Human dev: SSH is expected for private module access.
-  token_count=$(grep -c '^GITHUB_TOKEN=' "$ENV_FILE" || true)
-  if [[ "$token_count" -gt 1 ]]; then
-    echo "error: multiple GITHUB_TOKEN entries in .env, expected exactly one" >&2
-    exit 1
-  fi
-
-  echo "info: for private module access, configure SSH:" >&2
-  echo "  git config --global url.\"ssh://git@github.com/\".insteadOf \"https://github.com/\"" >&2
-  echo "info: run 'mise install' to install Go and Node (see .tool-versions)" >&2
-  echo "info: run 'npm install -g prettier' to install prettier" >&2
-fi
-
-chmod u+x "$SCRIPT_DIR/../run" "$SCRIPT_DIR/setup" 2>/dev/null || true
 
 setup_gpg_signing() {
   if [ -z "${GPG_PRIVATE_KEY:-}" ]; then
@@ -95,9 +46,9 @@ setup_gpg_signing() {
 
   # If a passphrase is set, wrap gpg to supply it non-interactively
   if [ -n "${GPG_PASSPHRASE:-}" ]; then
-    cat >/usr/local/bin/gpg-passphrase-wrapper <<WRAPPER
+    cat >/usr/local/bin/gpg-passphrase-wrapper <<'WRAPPER'
 #!/usr/bin/env bash
-exec gpg --batch --passphrase "${GPG_PASSPHRASE}" --pinentry-mode loopback "\$@"
+exec gpg --batch --passphrase "${GPG_PASSPHRASE}" --pinentry-mode loopback "$@"
 WRAPPER
     chmod +x /usr/local/bin/gpg-passphrase-wrapper
     git config --global gpg.program /usr/local/bin/gpg-passphrase-wrapper
@@ -106,11 +57,12 @@ WRAPPER
   echo "bin/setup: GPG signing configured (${FINGERPRINT})"
 }
 
-setup_gpg_signing
+fix_run_permissions() {
+  if [ -f "$SCRIPT_DIR/../run" ]; then
+    chmod u+x "$SCRIPT_DIR/../run" "$SCRIPT_DIR/setup" 2>/dev/null || true
+  fi
+}
 
-# --- Environment notes (Claude Code cloud agent, April 2026) ---
-#
-# GITHUB_TOKEN drives agent detection. In the cloud it is injected into the environment
-# before this script runs. In the jail it lives in .env and is sourced above.
-# Human devs have neither — they rely on SSH for private module access.
-# ----------------------------------------------------------------
+fix_run_permissions
+setup_gpg_signing
+install_toolchain
