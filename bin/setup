@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shellcheck shell=bash
 # Installs mise if missing, runs mise install, activates shims in PATH. Always call first.
-setup_toolchain() {
+toolchain() {
 	if ! command -v mise &>/dev/null; then
 		curl https://mise.run | sh
 		export PATH="$HOME/.local/bin:$PATH"
@@ -20,7 +20,7 @@ setup_toolchain() {
 
 # shellcheck shell=bash
 # Imports GPG key and configures git signing; skips if no key.
-setup_gpg_signing() {
+commit_signing() {
 	if [[ -z "${GPG_PRIVATE_KEY:-}" ]]; then
 		echo "bin/setup: GPG_PRIVATE_KEY not set, skipping" >&2
 		return 0
@@ -59,12 +59,12 @@ WRAPPER
 
 # shellcheck shell=bash
 # Makes run and bin/setup executable; no-op if run is absent.
-fix_run_permissions() {
+run_permissions() {
 	chmod u+x "$SCRIPT_DIR/../run" "$SCRIPT_DIR/setup" 2>/dev/null || true
 }
 
-setup_toolchain
-setup_gpg_signing
-fix_run_permissions
+toolchain
+commit_signing
+run_permissions
 
 echo "setup complete"
