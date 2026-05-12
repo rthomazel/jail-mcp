@@ -205,3 +205,23 @@ Logs are written in plain text to stderr.
 
 Check run script.
 Comments `# -- ` above each `case` are used for help message.
+
+## Optional: SSH key for git push from the container
+
+By default the container has no SSH key, so `git push` will fail against SSH remotes.
+If you want agents to be able to push to GitHub from inside the container, generate a dedicated key on your host and add it to your GitHub account.
+
+```bash
+# generate a key on your host
+ssh-keygen -t ed25519 -f ~/.ssh/agents_id_ed25519 -N "" -C "jail-mcp container"
+
+# print the public key — add it at github.com/settings/keys
+cat ~/.ssh/agents_id_ed25519.pub
+```
+
+Then mount the private key into the container by adding this line to your `docker-compose.yml` volumes:
+
+```yaml
+# mount only the key file, not the .ssh directory — /root is a named volume and mounting the directory would shadow it entirely
+- /home/you/.ssh/agents_id_ed25519:/root/.ssh/id_ed25519:ro
+```
