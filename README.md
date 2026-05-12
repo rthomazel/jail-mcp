@@ -225,3 +225,13 @@ Then mount the private key into the container by adding this line to your `docke
 # mount only the key file, not the .ssh directory — /root is a named volume and mounting the directory would shadow it entirely
 - /home/you/.ssh/agents_id_ed25519:/root/.ssh/id_ed25519:ro
 ```
+
+On first use, open a shell into the container and add GitHub to known hosts:
+
+```bash
+docker compose run --rm jail-mcp bash
+# then inside the container
+ssh-keyscan github.com >> ~/.ssh/known_hosts
+```
+
+This only needs to run once — `/root` is a named volume so `known_hosts` persists across sessions.
